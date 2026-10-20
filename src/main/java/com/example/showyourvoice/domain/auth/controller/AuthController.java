@@ -1,12 +1,14 @@
 package com.example.showyourvoice.domain.auth.controller;
 
 import com.example.showyourvoice.domain.auth.controller.dto.LoginRequest;
+import com.example.showyourvoice.domain.auth.controller.dto.SignUpRequest;
 import com.example.showyourvoice.domain.auth.service.AuthService;
 import com.example.showyourvoice.domain.user.controller.dto.UserInfoResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,6 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+
+    @PostMapping("/signup")
+    public ResponseEntity<UserInfoResponse> signUp(@Valid @RequestBody SignUpRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.signUp(request));
+    }
 
     @PostMapping("/login")
     public ResponseEntity<UserInfoResponse> login(@Valid @RequestBody LoginRequest request,

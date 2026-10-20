@@ -1,8 +1,12 @@
 package com.example.showyourvoice.domain.auth.service;
 
 import com.example.showyourvoice.domain.auth.controller.dto.LoginRequest;
+import com.example.showyourvoice.domain.auth.controller.dto.SignUpRequest;
 import com.example.showyourvoice.domain.auth.exception.LoginFailedException;
 import com.example.showyourvoice.domain.user.controller.dto.UserInfoResponse;
+import com.example.showyourvoice.domain.user.domain.User;
+import com.example.showyourvoice.domain.user.domain.UserRepository;
+import com.example.showyourvoice.domain.user.exception.DuplicateEmailException;
 import com.example.showyourvoice.domain.user.service.UserService;
 import com.example.showyourvoice.global.security.CustomUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
@@ -27,7 +32,19 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
     private final UserService userService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     private final SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
+
+    @Transactional
+    public UserInfoResponse signUp(SignUpRequest request) {
+        if (userRepository.existsByEmail(request.email())) {
+            throw new DuplicateEmailException();
+        }
+
+        User user = User.createStudent(request.email(), passwordEncoder.encode(request.password()), request.name());
+        return UserInfoResponse.from(userRepository.save(user));
+    }
 
     public UserInfoResponse login(LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         Authentication authentication = authenticate(request);
