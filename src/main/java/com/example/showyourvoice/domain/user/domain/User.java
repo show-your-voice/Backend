@@ -45,7 +45,7 @@ public class User extends BaseTimeEntity {
         this.role = role;
     }
 
-    public static User createUser(String email, String encodedPassword, String name) {
+    public static User createStudent(String email, String encodedPassword, String name) {
         return User.builder()
                 .email(email)
                 .password(encodedPassword)

@@ -95,7 +95,6 @@ src/main/java/{base.package}/
 - 새 도메인을 추가할 때도 `controller(dto) / service / domain / exception` 구조를 그대로 따른다.
 - 의존성 방향은 항상 `controller → service → repository`로 간다.
 - DTO 이름은 `{동작}{도메인}Request`, `{도메인}{용도}Response` 형식으로 짓는다 (예: `CreatePostRequest`, `PostDetailResponse`).
-- 다른 도메인의 Repository를 직접 참조하지 않는다. 필요하면 해당 도메인의 Service를 거친다.
 
 ## 코딩 규칙
 
