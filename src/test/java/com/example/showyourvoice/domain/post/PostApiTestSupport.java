@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.example.showyourvoice.domain.place.domain.Place;
 import com.example.showyourvoice.domain.place.domain.PlaceRepository;
+import com.example.showyourvoice.domain.post.domain.PostCategory;
 import com.example.showyourvoice.domain.post.domain.PostRepository;
 import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.domain.user.domain.UserRepository;
@@ -39,7 +40,7 @@ abstract class PostApiTestSupport {
     @Autowired protected JdbcTemplate jdbc;
     @Autowired protected EntityManager entityManager;
 
-    protected User reporter;
+    protected User author;
     protected User otherUser;
     protected User teacher;
     protected Place place;
@@ -48,21 +49,21 @@ abstract class PostApiTestSupport {
     @BeforeEach
     void prepareFixtures() {
         String suffix = UUID.randomUUID().toString();
-        reporter = userRepository.save(User.createStudent("reporter-" + suffix + "@dsm.hs.kr", "unused", "김학생"));
+        author = userRepository.save(User.createStudent("author-" + suffix + "@dsm.hs.kr", "unused", "김학생"));
         otherUser = userRepository.save(User.createStudent("other-" + suffix + "@dsm.hs.kr", "unused", "다른학생"));
         teacher = userRepository.save(User.createStudent("teacher-" + suffix + "@dsm.hs.kr", "unused", "이선생"));
         jdbc.update("UPDATE tbl_user SET role = 'TEACHER' WHERE id = ?", teacher.getId());
         entityManager.clear();
         teacher = userRepository.findById(teacher.getId()).orElseThrow();
-        place = placeRepository.save(Place.builder().buildingName("창의관").floor(4).name("화장실(남)").build());
-        otherPlace = placeRepository.save(Place.builder().buildingName("기숙사").floor(2).name("복도").build());
+        place = placeRepository.save(Place.builder().name("창의관 4층").imageUrl("https://example.com/creative-4f.png").build());
+        otherPlace = placeRepository.save(Place.builder().name("기숙사 2층").imageUrl("https://example.com/dorm-2f.png").build());
     }
 
-    protected void assignTeacher(Place target, User assignee) {
+    protected void assignTeacher(Place target, PostCategory category, User assignee) {
         jdbc.update("""
-                INSERT INTO tbl_place_teacher_assignment (place_id, teacher_id, created_at, updated_at)
-                VALUES (?, ?, CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6))
-                """, target.getId(), assignee.getId());
+                INSERT INTO tbl_assignment_rule (place_id, teacher_id, category, created_at, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6))
+                """, target.getId(), assignee.getId(), category.name());
     }
 
     protected MockHttpServletRequestBuilder createRequest(Map<String, Object> overrides) {
@@ -71,8 +72,10 @@ abstract class PostApiTestSupport {
         body.put("content", "2번째 세면대 수도꼭지를 돌려도 물이 나오지 않습니다.");
         body.put("category", "FACILITY");
         body.put("placeId", place.getId());
+        body.put("posX", 0.4215);
+        body.put("posY", 0.653);
         body.putAll(overrides);
-        return post("/api/posts").with(user(CustomUserDetails.from(reporter)))
+        return post("/api/posts").with(user(CustomUserDetails.from(author)))
                 .contentType(MediaType.APPLICATION_JSON).content(jsonMapper.writeValueAsString(body));
     }
 

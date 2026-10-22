@@ -24,7 +24,9 @@ class PostValidationIntegrationTests extends PostApiTestSupport {
                 Map.of("content", ""), Map.of("content", "가".repeat(5001)),
                 Map.of("category", "UNKNOWN"), Collections.singletonMap("category", null),
                 Collections.singletonMap("placeId", null), Map.of("placeId", 0), Map.of("placeId", -1),
-                Map.of("improvement", "가".repeat(1001)));
+                Map.of("improvement", "가".repeat(1001)),
+                Collections.singletonMap("posX", null), Map.of("posX", -0.1), Map.of("posX", 1.1),
+                Map.of("posX", 0.12345), Collections.singletonMap("posY", null), Map.of("posY", 1.0001));
     }
 
     @ParameterizedTest
@@ -72,20 +74,21 @@ class PostValidationIntegrationTests extends PostApiTestSupport {
 
     @Test
     void returnsNotFoundWhenPostDoesNotExist() throws Exception {
-        mvc.perform(get("/api/posts/{id}", Long.MAX_VALUE).with(user(CustomUserDetails.from(reporter))))
+        mvc.perform(get("/api/posts/{id}", Long.MAX_VALUE).with(user(CustomUserDetails.from(author))))
                 .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("P001"));
     }
 
     @Test
     void returnsBadRequestWhenPostIdIsNotNumeric() throws Exception {
-        mvc.perform(get("/api/posts/not-a-number").with(user(CustomUserDetails.from(reporter))))
+        mvc.perform(get("/api/posts/not-a-number").with(user(CustomUserDetails.from(author))))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("C001"));
     }
 
     @Test
     void listsSelectablePlacesWhenUserIsAuthenticated() throws Exception {
-        mvc.perform(get("/api/places").with(user(CustomUserDetails.from(reporter))))
+        mvc.perform(get("/api/places").with(user(CustomUserDetails.from(author))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.id == %s)].name", place.getId()).value("화장실(남)"));
+                .andExpect(jsonPath("$[?(@.id == %s)].name", place.getId()).value("창의관 4층"))
+                .andExpect(jsonPath("$[?(@.id == %s)].imageUrl", place.getId()).value("https://example.com/creative-4f.png"));
     }
 }
