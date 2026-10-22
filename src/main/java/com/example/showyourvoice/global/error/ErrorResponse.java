@@ -13,6 +13,12 @@ public record ErrorResponse(
         return new ErrorResponse(errorCode.getCode(), errorCode.getMessage(), List.of());
     }
 
+    public static ErrorResponse of(ErrorCode errorCode, String field) {
+        return field == null ? of(errorCode)
+                : new ErrorResponse(errorCode.getCode(), errorCode.getMessage(),
+                        List.of(new FieldError(field, errorCode.getMessage())));
+    }
+
     public static ErrorResponse of(ErrorCode errorCode, BindingResult bindingResult) {
         List<FieldError> errors = bindingResult.getFieldErrors().stream()
                 .map(error -> new FieldError(error.getField(), error.getDefaultMessage()))
