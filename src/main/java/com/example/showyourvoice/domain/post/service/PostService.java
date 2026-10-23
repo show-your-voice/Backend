@@ -9,6 +9,7 @@ import com.example.showyourvoice.domain.post.controller.dto.CreatePostRequest;
 import com.example.showyourvoice.domain.post.controller.dto.PostDetailResponse;
 import com.example.showyourvoice.domain.post.controller.dto.PostSummaryResponse;
 import com.example.showyourvoice.domain.post.domain.Post;
+import com.example.showyourvoice.domain.post.domain.PostImageRepository;
 import com.example.showyourvoice.domain.post.domain.PostRepository;
 import com.example.showyourvoice.domain.post.domain.PostStatus;
 import com.example.showyourvoice.domain.post.exception.PostNotFoundException;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final PostImageRepository postImageRepository;
     private final PlaceRepository placeRepository;
     private final AssignmentRuleRepository assignmentRuleRepository;
     private final UserRepository userRepository;
@@ -42,7 +44,7 @@ public class PostService {
                 .title(request.title()).content(request.content()).improvement(request.improvement())
                 .category(request.category()).place(place).posX(request.posX()).posY(request.posY())
                 .author(author).assignee(assignee).build();
-        return PostDetailResponse.from(postRepository.save(post));
+        return PostDetailResponse.of(postRepository.save(post), List.of());
     }
 
     public List<PostSummaryResponse> getPosts(Long placeId, PostStatus status) {
@@ -52,6 +54,7 @@ public class PostService {
     }
 
     public PostDetailResponse getPost(Long postId) {
-        return PostDetailResponse.from(postRepository.findById(postId).orElseThrow(PostNotFoundException::new));
+        Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+        return PostDetailResponse.of(post, postImageRepository.findAllByPostIdOrderBySortOrderAsc(postId));
     }
 }

@@ -84,6 +84,21 @@ class PostCreationIntegrationTests extends PostApiTestSupport {
     }
 
     @Test
+    void readsAttachedImagesInSortOrder() throws Exception {
+        long id = responseId(mvc.perform(createRequest(Map.of()))
+                .andExpect(jsonPath("$.imageUrls").isEmpty()).andReturn());
+        jdbc.update("""
+                INSERT INTO tbl_post_image (post_id, image_url, sort_order)
+                VALUES (?, 'https://example.com/second.jpg', 1), (?, 'https://example.com/first.jpg', 0)
+                """, id, id);
+
+        mvc.perform(get("/api/posts/{id}", id).with(user(CustomUserDetails.from(author))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imageUrls[0]").value("https://example.com/first.jpg"))
+                .andExpect(jsonPath("$.imageUrls[1]").value("https://example.com/second.jpg"));
+    }
+
+    @Test
     void createsUnassignedReportWhenOptionalFieldsAndPlaceMappingAreAbsent() throws Exception {
         assignTeacher(otherPlace, PostCategory.FACILITY, teacher);
 
