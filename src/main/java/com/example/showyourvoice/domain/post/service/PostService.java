@@ -7,12 +7,15 @@ import com.example.showyourvoice.domain.place.domain.PlaceRepository;
 import com.example.showyourvoice.domain.place.exception.PlaceNotFoundException;
 import com.example.showyourvoice.domain.post.controller.dto.CreatePostRequest;
 import com.example.showyourvoice.domain.post.controller.dto.PostDetailResponse;
+import com.example.showyourvoice.domain.post.controller.dto.PostSummaryResponse;
 import com.example.showyourvoice.domain.post.domain.Post;
 import com.example.showyourvoice.domain.post.domain.PostRepository;
+import com.example.showyourvoice.domain.post.domain.PostStatus;
 import com.example.showyourvoice.domain.post.exception.PostNotFoundException;
 import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.domain.user.domain.UserRepository;
 import com.example.showyourvoice.domain.user.exception.UserNotFoundException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +43,12 @@ public class PostService {
                 .category(request.category()).place(place).posX(request.posX()).posY(request.posY())
                 .author(author).assignee(assignee).build();
         return PostDetailResponse.from(postRepository.save(post));
+    }
+
+    public List<PostSummaryResponse> getPosts(Long placeId, PostStatus status) {
+        return postRepository.findAllByFilter(placeId, status).stream()
+                .map(PostSummaryResponse::from)
+                .toList();
     }
 
     public PostDetailResponse getPost(Long postId) {

@@ -2,10 +2,13 @@ package com.example.showyourvoice.domain.post.controller;
 
 import com.example.showyourvoice.domain.post.controller.dto.CreatePostRequest;
 import com.example.showyourvoice.domain.post.controller.dto.PostDetailResponse;
+import com.example.showyourvoice.domain.post.controller.dto.PostSummaryResponse;
+import com.example.showyourvoice.domain.post.domain.PostStatus;
 import com.example.showyourvoice.domain.post.service.PostService;
 import com.example.showyourvoice.global.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -28,6 +32,12 @@ public class PostController {
                                                         @AuthenticationPrincipal CustomUserDetails userDetails) {
         PostDetailResponse response = postService.createPost(request, userDetails.getUserId());
         return ResponseEntity.created(URI.create("/api/posts/" + response.id())).body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<PostSummaryResponse>> getPosts(@RequestParam(required = false) Long placeId,
+                                                              @RequestParam(required = false) PostStatus status) {
+        return ResponseEntity.ok(postService.getPosts(placeId, status));
     }
 
     @GetMapping("/{postId}")
