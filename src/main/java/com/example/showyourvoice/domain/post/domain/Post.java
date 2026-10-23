@@ -1,6 +1,7 @@
 package com.example.showyourvoice.domain.post.domain;
 
 import com.example.showyourvoice.domain.place.domain.Place;
+import com.example.showyourvoice.domain.user.domain.Role;
 import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.global.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
@@ -87,5 +88,9 @@ public class Post extends BaseTimeEntity {
         this.author = author;
         this.assignee = assignee;
         this.status = PostStatus.UNRESOLVED;
+    }
+
+    public boolean isDeletableBy(Long userId, Role role) {
+        return role == Role.TEACHER || author.getId().equals(userId);
     }
 }

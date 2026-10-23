@@ -12,7 +12,9 @@ import com.example.showyourvoice.domain.post.domain.Post;
 import com.example.showyourvoice.domain.post.domain.PostImageRepository;
 import com.example.showyourvoice.domain.post.domain.PostRepository;
 import com.example.showyourvoice.domain.post.domain.PostStatus;
+import com.example.showyourvoice.domain.post.exception.PostDeleteDeniedException;
 import com.example.showyourvoice.domain.post.exception.PostNotFoundException;
+import com.example.showyourvoice.domain.user.domain.Role;
 import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.domain.user.domain.UserRepository;
 import com.example.showyourvoice.domain.user.exception.UserNotFoundException;
@@ -56,5 +58,16 @@ public class PostService {
     public PostDetailResponse getPost(Long postId) {
         Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
         return PostDetailResponse.of(post, postImageRepository.findAllByPostIdOrderBySortOrderAsc(postId));
+    }
+
+    @Transactional
+    public void deletePost(Long postId, Long userId, Role role) {
+        Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+        if (!post.isDeletableBy(userId, role)) {
+            throw new PostDeleteDeniedException();
+        }
+
+        postImageRepository.deleteAllByPostId(postId);
+        postRepository.delete(post);
     }
 }
