@@ -22,19 +22,15 @@ public class Place extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String buildingName;
-
-    @Column(nullable = false)
-    private Integer floor;
-
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 50)
     private String name;
 
+    @Column(nullable = false, length = 500)
+    private String imageUrl;
+
     @Builder
-    private Place(String buildingName, Integer floor, String name) {
-        this.buildingName = buildingName;
-        this.floor = floor;
+    private Place(String name, String imageUrl) {
         this.name = name;
+        this.imageUrl = imageUrl;
     }
 }

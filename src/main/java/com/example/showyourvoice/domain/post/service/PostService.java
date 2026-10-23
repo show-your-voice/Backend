@@ -1,9 +1,9 @@
 package com.example.showyourvoice.domain.post.service;
 
+import com.example.showyourvoice.domain.place.domain.AssignmentRule;
+import com.example.showyourvoice.domain.place.domain.AssignmentRuleRepository;
 import com.example.showyourvoice.domain.place.domain.Place;
 import com.example.showyourvoice.domain.place.domain.PlaceRepository;
-import com.example.showyourvoice.domain.place.domain.PlaceTeacherAssignment;
-import com.example.showyourvoice.domain.place.domain.PlaceTeacherAssignmentRepository;
 import com.example.showyourvoice.domain.place.exception.PlaceNotFoundException;
 import com.example.showyourvoice.domain.post.controller.dto.CreatePostRequest;
 import com.example.showyourvoice.domain.post.controller.dto.PostDetailResponse;
@@ -24,20 +24,21 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PlaceRepository placeRepository;
-    private final PlaceTeacherAssignmentRepository assignmentRepository;
+    private final AssignmentRuleRepository assignmentRuleRepository;
     private final UserRepository userRepository;
 
     @Transactional
     public PostDetailResponse createPost(CreatePostRequest request, Long userId) {
-        User reporter = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        User author = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
         Place place = placeRepository.findById(request.placeId()).orElseThrow(PlaceNotFoundException::new);
-        User teacher = assignmentRepository.findByPlaceId(place.getId())
-                .map(PlaceTeacherAssignment::assignedTeacher)
+        User assignee = assignmentRuleRepository.findFirstByPlaceIdAndCategoryOrderByIdAsc(place.getId(), request.category())
+                .map(AssignmentRule::assignedTeacher)
                 .orElse(null);
 
         Post post = Post.builder()
                 .title(request.title()).content(request.content()).improvement(request.improvement())
-                .category(request.category()).place(place).reporter(reporter).assignedTeacher(teacher).build();
+                .category(request.category()).place(place).posX(request.posX()).posY(request.posY())
+                .author(author).assignee(assignee).build();
         return PostDetailResponse.from(postRepository.save(post));
     }
 

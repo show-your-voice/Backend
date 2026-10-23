@@ -14,11 +14,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
@@ -30,49 +33,59 @@ public class Post extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "author_id", nullable = false)
+    private User author;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignee_id")
+    private User assignee;
+
     @Column(nullable = false, length = 100)
     private String title;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String improvement;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(nullable = false, length = 20)
     private PostCategory category;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 20)
+    private PostStatus status;
+
+    @Column(name = "pos_x", nullable = false, precision = 5, scale = 4)
+    private BigDecimal posX;
+
+    @Column(name = "pos_y", nullable = false, precision = 5, scale = 4)
+    private BigDecimal posY;
+
+    private LocalDateTime inProgressAt;
+
+    private LocalDateTime resolvedAt;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "place_id", nullable = false)
     private Place place;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "reporter_id", nullable = false)
-    private User reporter;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_teacher_id")
-    private User assignedTeacher;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private PostStatus status;
-
-    private LocalDateTime processingStartedAt;
-
-    private LocalDateTime resolvedAt;
-
     @Builder
     private Post(String title, String content, String improvement, PostCategory category,
-                 Place place, User reporter, User assignedTeacher) {
+                 Place place, BigDecimal posX, BigDecimal posY, User author, User assignee) {
         this.title = title.strip();
         this.content = content.strip();
         this.improvement = improvement == null || improvement.isBlank() ? null : improvement.strip();
         this.category = category;
         this.place = place;
-        this.reporter = reporter;
-        this.assignedTeacher = assignedTeacher;
-        this.status = PostStatus.RECEIVED;
+        this.posX = posX;
+        this.posY = posY;
+        this.author = author;
+        this.assignee = assignee;
+        this.status = PostStatus.UNRESOLVED;
     }
 }

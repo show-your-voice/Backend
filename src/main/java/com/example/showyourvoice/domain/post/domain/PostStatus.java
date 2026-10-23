@@ -6,9 +6,9 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum PostStatus {
-    RECEIVED("접수"),
-    IN_PROGRESS("처리 중"),
-    COMPLETED("처리 완료");
+    UNRESOLVED("미해결"),
+    IN_PROGRESS("진행 중"),
+    RESOLVED("해결 완료");
 
     private final String label;
 }

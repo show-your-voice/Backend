@@ -38,27 +38,27 @@ class PostHttpIntegrationTests {
     @Value("${local.server.port}") private int port;
 
     private HttpClient client;
-    private User reporter;
+    private User author;
     private User teacher;
     private Place place;
 
     @BeforeEach
     void prepareCommittedFixturesAndLogin() throws Exception {
         String suffix = UUID.randomUUID().toString();
-        reporter = userRepository.save(User.createStudent("http-reporter-" + suffix + "@dsm.hs.kr",
+        author = userRepository.save(User.createStudent("http-author-" + suffix + "@dsm.hs.kr",
                 passwordEncoder.encode("LocalTest123!"), "김학생"));
         teacher = userRepository.save(User.createStudent("http-teacher-" + suffix + "@dsm.hs.kr", "unused", "이선생"));
         jdbc.update("UPDATE tbl_user SET role = 'TEACHER' WHERE id = ?", teacher.getId());
-        place = placeRepository.save(Place.builder().buildingName("창의관").floor(4).name("화장실(남)").build());
+        place = placeRepository.save(Place.builder().name("창의관 4층").imageUrl("https://example.com/creative-4f.png").build());
         jdbc.update("""
-                INSERT INTO tbl_place_teacher_assignment (place_id, teacher_id, created_at, updated_at)
-                VALUES (?, ?, CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6))
+                INSERT INTO tbl_assignment_rule (place_id, teacher_id, category, created_at, updated_at)
+                VALUES (?, ?, 'FACILITY', CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6))
                 """, place.getId(), teacher.getId());
         client = HttpClient.newBuilder().cookieHandler(new CookieManager())
                 .connectTimeout(Duration.ofSeconds(5)).build();
 
         HttpResponse<String> login = post("/api/auth/login",
-                Map.of("email", reporter.getEmail(), "password", "LocalTest123!"));
+                Map.of("email", author.getEmail(), "password", "LocalTest123!"));
         assertThat(login.statusCode()).isEqualTo(200);
     }
 
@@ -67,29 +67,30 @@ class PostHttpIntegrationTests {
         if (client != null) {
             client.close();
         }
-        if (reporter != null) {
-            jdbc.update("DELETE FROM tbl_post WHERE reporter_id = ?", reporter.getId());
+        if (author != null) {
+            jdbc.update("DELETE FROM tbl_post WHERE author_id = ?", author.getId());
         }
         if (place != null) {
-            jdbc.update("DELETE FROM tbl_place_teacher_assignment WHERE place_id = ?", place.getId());
+            jdbc.update("DELETE FROM tbl_assignment_rule WHERE place_id = ?", place.getId());
             placeRepository.deleteById(place.getId());
         }
         if (teacher != null) {
             userRepository.deleteById(teacher.getId());
         }
-        if (reporter != null) {
-            userRepository.deleteById(reporter.getId());
+        if (author != null) {
+            userRepository.deleteById(author.getId());
         }
     }
 
     @Test
     void commitsAllFieldsAndReturnsSameDetailThroughHttp() throws Exception {
         LocalDateTime before = LocalDateTime.now();
-        HttpResponse<String> response = post("/api/posts", Map.of(
-                "title", "화장실 세면대 물이 안 나와요", "content", "수도꼭지를 돌려도 물이 나오지 않습니다.",
-                "category", "FACILITY", "placeId", place.getId(), "improvement", "수도꼭지를 교체해 주세요.",
-                "reporterId", teacher.getId(), "assignedTeacherId", reporter.getId(),
-                "status", "COMPLETED", "receivedAt", "2000-01-01T00:00:00"));
+        HttpResponse<String> response = post("/api/posts", Map.ofEntries(
+                Map.entry("title", "화장실 세면대 물이 안 나와요"), Map.entry("content", "수도꼭지를 돌려도 물이 나오지 않습니다."),
+                Map.entry("category", "FACILITY"), Map.entry("placeId", place.getId()),
+                Map.entry("posX", 0.4215), Map.entry("posY", 0.653), Map.entry("improvement", "수도꼭지를 교체해 주세요."),
+                Map.entry("authorId", teacher.getId()), Map.entry("assigneeId", author.getId()),
+                Map.entry("status", "RESOLVED"), Map.entry("receivedAt", "2000-01-01T00:00:00")));
 
         assertThat(response.statusCode()).isEqualTo(201);
         JsonNode created = jsonMapper.readTree(response.body());
@@ -100,28 +101,29 @@ class PostHttpIntegrationTests {
         assertThat(created.get("content").asString()).isEqualTo("수도꼭지를 돌려도 물이 나오지 않습니다.");
         assertThat(created.get("improvement").asString()).isEqualTo("수도꼭지를 교체해 주세요.");
         assertThat(created.at("/category/code").asString()).isEqualTo("FACILITY");
-        assertThat(created.at("/category/label").asString()).isEqualTo("시설 고장");
+        assertThat(created.at("/category/label").asString()).isEqualTo("시설");
         assertThat(created.at("/place/id").asLong()).isEqualTo(place.getId());
-        assertThat(created.at("/place/buildingName").asString()).isEqualTo("창의관");
-        assertThat(created.at("/place/floor").asInt()).isEqualTo(4);
-        assertThat(created.at("/place/name").asString()).isEqualTo("화장실(남)");
-        assertThat(created.at("/reporter/id").asLong()).isEqualTo(reporter.getId());
-        assertThat(created.at("/reporter/name").asString()).isEqualTo("김학생");
-        assertThat(created.at("/assignedTeacher/id").asLong()).isEqualTo(teacher.getId());
-        assertThat(created.at("/assignedTeacher/role").asString()).isEqualTo("TEACHER");
-        assertThat(created.at("/status/code").asString()).isEqualTo("RECEIVED");
-        assertThat(created.at("/status/label").asString()).isEqualTo("접수");
+        assertThat(created.at("/place/name").asString()).isEqualTo("창의관 4층");
+        assertThat(created.at("/place/imageUrl").asString()).isEqualTo("https://example.com/creative-4f.png");
+        assertThat(created.get("posX").decimalValue()).isEqualByComparingTo("0.4215");
+        assertThat(created.get("posY").decimalValue()).isEqualByComparingTo("0.653");
+        assertThat(created.at("/author/id").asLong()).isEqualTo(author.getId());
+        assertThat(created.at("/author/name").asString()).isEqualTo("김학생");
+        assertThat(created.at("/assignee/id").asLong()).isEqualTo(teacher.getId());
+        assertThat(created.at("/assignee/role").asString()).isEqualTo("TEACHER");
+        assertThat(created.at("/status/code").asString()).isEqualTo("UNRESOLVED");
+        assertThat(created.at("/status/label").asString()).isEqualTo("미해결");
         assertThat(LocalDateTime.parse(created.get("receivedAt").asString())).isBetween(before, LocalDateTime.now());
-        assertThat(created.get("processingStartedAt").isNull()).isTrue();
+        assertThat(created.get("inProgressAt").isNull()).isTrue();
         assertThat(created.get("resolvedAt").isNull()).isTrue();
 
         Map<String, Object> stored = jdbc.queryForMap("SELECT * FROM tbl_post WHERE id = ?", id);
         assertThat(stored).containsEntry("title", "화장실 세면대 물이 안 나와요")
                 .containsEntry("content", "수도꼭지를 돌려도 물이 나오지 않습니다.")
                 .containsEntry("improvement", "수도꼭지를 교체해 주세요.")
-                .containsEntry("category", "FACILITY").containsEntry("status", "RECEIVED")
-                .containsEntry("place_id", place.getId()).containsEntry("reporter_id", reporter.getId())
-                .containsEntry("assigned_teacher_id", teacher.getId());
+                .containsEntry("category", "FACILITY").containsEntry("status", "UNRESOLVED")
+                .containsEntry("place_id", place.getId()).containsEntry("author_id", author.getId())
+                .containsEntry("assignee_id", teacher.getId());
         assertThat(stored.get("created_at")).isNotNull();
 
         HttpResponse<String> detail = client.send(request(location).GET().build(), HttpResponse.BodyHandlers.ofString());
@@ -131,19 +133,19 @@ class PostHttpIntegrationTests {
 
     @Test
     void commitsOptionalImprovementAndUnassignedTeacherAsNullThroughHttp() throws Exception {
-        jdbc.update("DELETE FROM tbl_place_teacher_assignment WHERE place_id = ?", place.getId());
+        jdbc.update("DELETE FROM tbl_assignment_rule WHERE place_id = ?", place.getId());
 
         HttpResponse<String> response = post("/api/posts", Map.of(
                 "title", "와이파이 연결이 끊겨요", "content", "인터넷 연결을 확인해 주세요.",
-                "category", "NETWORK", "placeId", place.getId()));
+                "category", "NETWORK", "placeId", place.getId(), "posX", 0.1, "posY", 0.2));
 
         assertThat(response.statusCode()).isEqualTo(201);
         JsonNode created = jsonMapper.readTree(response.body());
         assertThat(created.get("improvement").isNull()).isTrue();
-        assertThat(created.get("assignedTeacher").isNull()).isTrue();
-        Map<String, Object> stored = jdbc.queryForMap("SELECT improvement, assigned_teacher_id FROM tbl_post WHERE id = ?",
+        assertThat(created.get("assignee").isNull()).isTrue();
+        Map<String, Object> stored = jdbc.queryForMap("SELECT improvement, assignee_id FROM tbl_post WHERE id = ?",
                 created.get("id").asLong());
-        assertThat(stored).containsEntry("improvement", null).containsEntry("assigned_teacher_id", null);
+        assertThat(stored).containsEntry("improvement", null).containsEntry("assignee_id", null);
     }
 
     private HttpResponse<String> post(String path, Map<String, Object> body) throws Exception {

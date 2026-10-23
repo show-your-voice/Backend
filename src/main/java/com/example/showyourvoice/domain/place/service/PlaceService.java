@@ -15,7 +15,7 @@ public class PlaceService {
     private final PlaceRepository placeRepository;
 
     public List<PlaceInfoResponse> getPlaces() {
-        return placeRepository.findAllByOrderByBuildingNameAscFloorAscNameAscIdAsc().stream()
+        return placeRepository.findAllByOrderByNameAscIdAsc().stream()
                 .map(PlaceInfoResponse::from)
                 .toList();
     }
