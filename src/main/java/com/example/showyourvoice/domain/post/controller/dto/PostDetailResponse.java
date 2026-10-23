@@ -3,10 +3,12 @@ package com.example.showyourvoice.domain.post.controller.dto;
 import com.example.showyourvoice.domain.place.controller.dto.PlaceInfoResponse;
 import com.example.showyourvoice.domain.post.domain.Post;
 import com.example.showyourvoice.domain.post.domain.PostCategory;
+import com.example.showyourvoice.domain.post.domain.PostImage;
 import com.example.showyourvoice.domain.post.domain.PostStatus;
 import com.example.showyourvoice.domain.user.controller.dto.UserInfoResponse;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record PostDetailResponse(
         Long id,
@@ -20,12 +22,13 @@ public record PostDetailResponse(
         UserInfoResponse author,
         UserInfoResponse assignee,
         StatusInfo status,
+        List<String> imageUrls,
         LocalDateTime receivedAt,
         LocalDateTime inProgressAt,
         LocalDateTime resolvedAt
 ) {
 
-    public static PostDetailResponse from(Post post) {
+    public static PostDetailResponse of(Post post, List<PostImage> images) {
         return new PostDetailResponse(
                 post.getId(), post.getTitle(), post.getContent(), post.getImprovement(),
                 new CategoryInfo(post.getCategory(), post.getCategory().getLabel()),
@@ -33,6 +36,7 @@ public record PostDetailResponse(
                 UserInfoResponse.from(post.getAuthor()),
                 post.getAssignee() == null ? null : UserInfoResponse.from(post.getAssignee()),
                 new StatusInfo(post.getStatus(), post.getStatus().getLabel()),
+                images.stream().map(PostImage::getImageUrl).toList(),
                 post.getCreatedAt(), post.getInProgressAt(), post.getResolvedAt());
     }
 
