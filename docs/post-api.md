@@ -8,8 +8,9 @@
 2. 사용자가 이미지 위에서 찍은 위치를 이미지 크기 대비 비율(0~1)로 바꿔 `posX`, `posY`에 담는다.
 3. `POST /api/posts`로 제목·내용·카테고리·장소·좌표와 선택 항목인 개선방향을 전송한다.
 4. 생성 응답의 `id`로 `GET /api/posts/{id}`를 호출하면 같은 구조의 상세 정보를 받는다.
+5. `GET /api/posts`로 게시물 목록을, `DELETE /api/posts/{id}`로 게시물을 삭제한다.
 
-사진 첨부는 다른 팀원이 담당하며 현재 API에서 보류한다. 사진 관련 요청·응답 필드와 업로드 기능은 포함하지 않는다.
+사진 업로드와 게시물 생성 시 사진 연결은 다른 팀원이 담당하며 현재 API에서 보류한다. 상세 조회는 `tbl_post_image`에 저장된 사진 주소를 `imageUrls`로 내려준다.
 
 ## 게시물 생성
 
@@ -51,6 +52,7 @@
   "author": { "id": 10, "email": "student01@dsm.hs.kr", "name": "김학생", "role": "USER" },
   "assignee": { "id": 20, "email": "teacher@dsm.hs.kr", "name": "이선생", "role": "TEACHER" },
   "status": { "code": "UNRESOLVED", "label": "미해결" },
+  "imageUrls": [],
   "receivedAt": "2026-10-21T10:30:00.123456",
   "inProgressAt": null,
   "resolvedAt": null
@@ -58,6 +60,36 @@
 ```
 
 작성자는 로그인한 사용자, 접수일은 서버 저장 시각, 최초 상태는 `UNRESOLVED`로 지정된다. 시간은 기존 코드의 `LocalDateTime` 형식이다. 처리 상태 코드는 `UNRESOLVED`, `IN_PROGRESS`, `RESOLVED`이며 상태 변경 API는 이번 구현 범위에 포함하지 않는다.
+
+## 게시물 상세 조회
+
+`GET /api/posts/{id}`는 생성 응답과 같은 구조를 반환한다. `imageUrls`는 `sort_order` 오름차순이며 사진이 없으면 빈 배열이다.
+
+## 게시물 목록 조회
+
+`GET /api/posts?placeId=1&status=UNRESOLVED`
+
+`placeId`, `status`는 선택이며 함께 쓸 수 있다. 페이지네이션 없이 조건에 맞는 게시물 전체를 최신순으로 반환한다.
+
+```json
+[
+  {
+    "id": 1,
+    "title": "화장실 세면대 물이 안 나와요",
+    "content": "2번째 세면대 수도꼭지를 돌려도 물이 나오지 않습니다.",
+    "status": { "code": "UNRESOLVED", "label": "미해결" },
+    "authorName": "김학생",
+    "placeName": "창의관 4층",
+    "receivedAt": "2026-10-21T10:30:00.123456"
+  }
+]
+```
+
+## 게시물 삭제
+
+`DELETE /api/posts/{id}`
+
+작성자 본인 또는 선생님(`TEACHER`)만 삭제할 수 있다. 성공 시 `204 No Content`를 반환하고 첨부 사진 정보도 함께 삭제한다. 다른 사용자가 요청하면 `403 P002`를 반환한다.
 
 ## 담당 규칙 DB 등록
 
@@ -84,6 +116,7 @@ FROM tbl_user WHERE id = @teacher_id AND role = 'TEACHER';
 | --- | --- | --- |
 | 400 | C001 | 입력값 오류 |
 | 401 | A001 | 로그인 필요 |
+| 403 | P002 | 게시물 삭제 권한 없음 |
 | 404 | L001 | 존재하지 않는 장소 |
 | 404 | P001 | 존재하지 않는 게시물 |
 | 409 | L002 | 담당 규칙의 계정 역할 오류 |
