@@ -24,7 +24,7 @@ class UserServiceTests {
     @Test
     void returnsEmptyListWhenNoTeachersExist() {
         when(userRepository.findAllByRoleOrderByNameAscIdAsc(Role.TEACHER)).thenReturn(List.of());
-        when(assignmentRuleRepository.findAllEffectiveByTeacherRole(Role.TEACHER)).thenReturn(List.of());
+        when(assignmentRuleRepository.findAllByOrderByPlaceNameAscPlaceIdAscIdAsc()).thenReturn(List.of());
 
         assertThat(userService.getManagers()).isEmpty();
     }
