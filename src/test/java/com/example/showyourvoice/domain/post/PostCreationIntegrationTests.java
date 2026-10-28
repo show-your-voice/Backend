@@ -161,7 +161,8 @@ class PostCreationIntegrationTests extends PostApiTestSupport {
     @Test
     void assignsFirstRegisteredTeacherWhenRulesOverlap() throws Exception {
         User laterTeacher = userRepository.save(
-                User.createStudent("later-" + UUID.randomUUID() + "@dsm.hs.kr", "unused", "박선생"));
+                User.createStudent("later" + UUID.randomUUID().toString().substring(0, 8),
+                        "later-" + UUID.randomUUID() + "@dsm.hs.kr", "unused", "박선생"));
         jdbc.update("UPDATE tbl_user SET role = 'TEACHER' WHERE id = ?", laterTeacher.getId());
         assignTeacher(place, PostCategory.FACILITY, teacher);
         assignTeacher(place, PostCategory.FACILITY, laterTeacher);
