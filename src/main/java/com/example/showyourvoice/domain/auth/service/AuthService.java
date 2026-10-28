@@ -1,5 +1,6 @@
 package com.example.showyourvoice.domain.auth.service;
 
+import com.example.showyourvoice.domain.auth.controller.dto.LoginIdAvailabilityResponse;
 import com.example.showyourvoice.domain.auth.controller.dto.LoginRequest;
 import com.example.showyourvoice.domain.auth.controller.dto.SignUpRequest;
 import com.example.showyourvoice.domain.auth.exception.LoginFailedException;
@@ -36,6 +37,10 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
+
+    public LoginIdAvailabilityResponse checkLoginIdAvailability(String loginId) {
+        return new LoginIdAvailabilityResponse(!userRepository.existsByLoginId(loginId));
+    }
 
     @Transactional
     public UserInfoResponse signUp(SignUpRequest request) {

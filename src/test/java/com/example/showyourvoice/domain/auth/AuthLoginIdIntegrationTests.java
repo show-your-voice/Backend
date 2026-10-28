@@ -1,5 +1,6 @@
 package com.example.showyourvoice.domain.auth;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -81,6 +82,16 @@ class AuthLoginIdIntegrationTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("C001"))
                 .andExpect(jsonPath("$.errors[0].field").value("loginId"));
+    }
+
+    @Test
+    void reportsLoginIdAvailabilityWithoutLogin() throws Exception {
+        mvc.perform(get("/api/auth/login-ids/{loginId}/availability", student.getLoginId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.available").value(false));
+        mvc.perform(get("/api/auth/login-ids/{loginId}/availability", "free" + UUID.randomUUID().toString().substring(0, 8)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.available").value(true));
     }
 
     private Map<String, Object> signUp(String loginId, String email) {

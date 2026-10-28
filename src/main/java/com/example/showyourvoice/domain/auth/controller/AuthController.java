@@ -1,5 +1,6 @@
 package com.example.showyourvoice.domain.auth.controller;
 
+import com.example.showyourvoice.domain.auth.controller.dto.LoginIdAvailabilityResponse;
 import com.example.showyourvoice.domain.auth.controller.dto.LoginRequest;
 import com.example.showyourvoice.domain.auth.controller.dto.SignUpRequest;
 import com.example.showyourvoice.domain.auth.service.AuthService;
@@ -10,6 +11,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+
+    @GetMapping("/login-ids/{loginId}/availability")
+    public ResponseEntity<LoginIdAvailabilityResponse> checkLoginIdAvailability(@PathVariable String loginId) {
+        return ResponseEntity.ok(authService.checkLoginIdAvailability(loginId));
+    }
 
     @PostMapping("/signup")
     public ResponseEntity<UserInfoResponse> signUp(@Valid @RequestBody SignUpRequest request) {
