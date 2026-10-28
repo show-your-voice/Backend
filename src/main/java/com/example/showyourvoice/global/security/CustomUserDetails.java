@@ -17,12 +17,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 public class CustomUserDetails implements UserDetails, CredentialsContainer {
 
     private final Long userId;
-    private final String email;
+    private final String loginId;
     private String password;
     private final Role role;
 
     public static CustomUserDetails from(User user) {
-        return new CustomUserDetails(user.getId(), user.getEmail(), user.getPassword(), user.getRole());
+        return new CustomUserDetails(user.getId(), user.getLoginId(), user.getPassword(), user.getRole());
     }
 
     @Override
@@ -32,7 +32,7 @@ public class CustomUserDetails implements UserDetails, CredentialsContainer {
 
     @Override
     public String getUsername() {
-        return email;
+        return loginId;
     }
 
     // 인증이 끝나면 세션에 비밀번호 해시가 남지 않도록 지운다.

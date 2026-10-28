@@ -1,5 +1,6 @@
 package com.example.showyourvoice.domain.auth.service;
 
+import com.example.showyourvoice.domain.auth.controller.dto.LoginIdAvailabilityResponse;
 import com.example.showyourvoice.domain.auth.controller.dto.LoginRequest;
 import com.example.showyourvoice.domain.auth.controller.dto.SignUpRequest;
 import com.example.showyourvoice.domain.auth.exception.LoginFailedException;
@@ -7,6 +8,7 @@ import com.example.showyourvoice.domain.user.controller.dto.UserInfoResponse;
 import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.domain.user.domain.UserRepository;
 import com.example.showyourvoice.domain.user.exception.DuplicateEmailException;
+import com.example.showyourvoice.domain.user.exception.DuplicateLoginIdException;
 import com.example.showyourvoice.domain.user.service.UserService;
 import com.example.showyourvoice.global.security.CustomUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,13 +38,20 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
 
+    public LoginIdAvailabilityResponse checkLoginIdAvailability(String loginId) {
+        return new LoginIdAvailabilityResponse(!userRepository.existsByLoginId(loginId));
+    }
+
     @Transactional
     public UserInfoResponse signUp(SignUpRequest request) {
+        if (userRepository.existsByLoginId(request.loginId())) {
+            throw new DuplicateLoginIdException();
+        }
         if (userRepository.existsByEmail(request.email())) {
             throw new DuplicateEmailException();
         }
 
-        User user = User.createStudent(request.email(), passwordEncoder.encode(request.password()), request.name());
+        User user = User.createStudent(request.loginId(), request.email(), passwordEncoder.encode(request.password()), request.name());
         return UserInfoResponse.from(userRepository.save(user));
     }
 
@@ -70,7 +79,7 @@ public class AuthService {
     private Authentication authenticate(LoginRequest request) {
         try {
             return authenticationManager.authenticate(
-                    UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
+                    UsernamePasswordAuthenticationToken.unauthenticated(request.loginId(), request.password()));
         } catch (AuthenticationException e) {
             throw new LoginFailedException();
         }

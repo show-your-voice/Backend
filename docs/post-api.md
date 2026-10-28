@@ -49,8 +49,8 @@
   "place": { "id": 1, "name": "창의관 4층", "imageUrl": "https://example.com/places/creative-4f.png" },
   "posX": 0.4215,
   "posY": 0.6530,
-  "author": { "id": 10, "email": "student01@dsm.hs.kr", "name": "김학생", "role": "USER" },
-  "assignee": { "id": 20, "email": "teacher@dsm.hs.kr", "name": "이선생", "role": "TEACHER" },
+  "author": { "id": 10, "loginId": "student01", "email": "student01@dsm.hs.kr", "name": "김학생", "role": "USER" },
+  "assignee": { "id": 20, "loginId": "teacher01", "email": "teacher@dsm.hs.kr", "name": "이선생", "role": "TEACHER" },
   "status": { "code": "UNRESOLVED", "label": "미해결" },
   "imageUrls": [],
   "receivedAt": "2026-10-21T10:30:00.123456",
@@ -100,7 +100,7 @@ INSERT INTO tbl_place (name, image_url, created_at, updated_at)
 VALUES ('창의관 4층', 'https://example.com/places/creative-4f.png', CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6));
 SET @place_id = LAST_INSERT_ID();
 
-SELECT id, email, name FROM tbl_user WHERE role = 'TEACHER';
+SELECT id, login_id, email, name FROM tbl_user WHERE role = 'TEACHER';
 SET @teacher_id = 20;
 
 INSERT INTO tbl_assignment_rule (place_id, teacher_id, category, created_at, updated_at)

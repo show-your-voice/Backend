@@ -26,6 +26,9 @@ public class User extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true, length = 20)
+    private String loginId;
+
     @Column(nullable = false, unique = true)
     private String email;
 
@@ -41,15 +44,17 @@ public class User extends BaseTimeEntity {
     private Role role;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private User(String email, String password, String name, Role role) {
+    private User(String loginId, String email, String password, String name, Role role) {
+        this.loginId = loginId;
         this.email = email;
         this.password = password;
         this.name = name;
         this.role = role;
     }
 
-    public static User createStudent(String email, String encodedPassword, String name) {
+    public static User createStudent(String loginId, String email, String encodedPassword, String name) {
         return User.builder()
+                .loginId(loginId)
                 .email(email)
                 .password(encodedPassword)
                 .name(name)
