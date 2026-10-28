@@ -34,8 +34,8 @@ public class UserService {
         return UserInfoResponse.from(user);
     }
 
-    public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
+    public Optional<User> findByLoginId(String loginId) {
+        return userRepository.findByLoginId(loginId);
     }
 
     public List<ManagerInfoResponse> getManagers() {

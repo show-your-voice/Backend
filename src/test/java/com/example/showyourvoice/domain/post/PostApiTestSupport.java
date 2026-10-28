@@ -49,9 +49,10 @@ abstract class PostApiTestSupport {
     @BeforeEach
     void prepareFixtures() {
         String suffix = UUID.randomUUID().toString();
-        author = userRepository.save(User.createStudent("author-" + suffix + "@dsm.hs.kr", "unused", "김학생"));
-        otherUser = userRepository.save(User.createStudent("other-" + suffix + "@dsm.hs.kr", "unused", "다른학생"));
-        teacher = userRepository.save(User.createStudent("teacher-" + suffix + "@dsm.hs.kr", "unused", "이선생"));
+        String idSuffix = suffix.substring(0, 8);
+        author = userRepository.save(User.createStudent("author" + idSuffix, "author-" + suffix + "@dsm.hs.kr", "unused", "김학생"));
+        otherUser = userRepository.save(User.createStudent("other" + idSuffix, "other-" + suffix + "@dsm.hs.kr", "unused", "다른학생"));
+        teacher = userRepository.save(User.createStudent("teacher" + idSuffix, "teacher-" + suffix + "@dsm.hs.kr", "unused", "이선생"));
         jdbc.update("UPDATE tbl_user SET role = 'TEACHER' WHERE id = ?", teacher.getId());
         entityManager.clear();
         teacher = userRepository.findById(teacher.getId()).orElseThrow();

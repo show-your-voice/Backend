@@ -45,9 +45,10 @@ class PostHttpIntegrationTests {
     @BeforeEach
     void prepareCommittedFixturesAndLogin() throws Exception {
         String suffix = UUID.randomUUID().toString();
-        author = userRepository.save(User.createStudent("http-author-" + suffix + "@dsm.hs.kr",
+        String idSuffix = suffix.substring(0, 8);
+        author = userRepository.save(User.createStudent("httpauthor" + idSuffix, "http-author-" + suffix + "@dsm.hs.kr",
                 passwordEncoder.encode("LocalTest123!"), "김학생"));
-        teacher = userRepository.save(User.createStudent("http-teacher-" + suffix + "@dsm.hs.kr", "unused", "이선생"));
+        teacher = userRepository.save(User.createStudent("httpteacher" + idSuffix, "http-teacher-" + suffix + "@dsm.hs.kr", "unused", "이선생"));
         jdbc.update("UPDATE tbl_user SET role = 'TEACHER' WHERE id = ?", teacher.getId());
         place = placeRepository.save(Place.builder().name("창의관 4층").imageUrl("https://example.com/creative-4f.png").build());
         jdbc.update("""
@@ -58,7 +59,7 @@ class PostHttpIntegrationTests {
                 .connectTimeout(Duration.ofSeconds(5)).build();
 
         HttpResponse<String> login = post("/api/auth/login",
-                Map.of("email", author.getEmail(), "password", "LocalTest123!"));
+                Map.of("loginId", author.getLoginId(), "password", "LocalTest123!"));
         assertThat(login.statusCode()).isEqualTo(200);
     }
 
