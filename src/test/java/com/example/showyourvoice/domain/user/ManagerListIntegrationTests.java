@@ -44,8 +44,9 @@ class ManagerListIntegrationTests {
 
     @BeforeEach
     void prepareStudent() {
-        student = userRepository.save(User.createStudent("manager-reader-" + UUID.randomUUID() + "@dsm.hs.kr",
-                "unused", "김학생"));
+        String suffix = UUID.randomUUID().toString();
+        student = userRepository.save(User.createStudent("reader" + suffix.substring(0, 8),
+                "manager-reader-" + suffix + "@dsm.hs.kr", "unused", "김학생"));
     }
 
     @Test
@@ -134,8 +135,9 @@ class ManagerListIntegrationTests {
             User teacher = createTeacher("담당 선생님 " + index);
             assign(createPlace("4층 교실 " + index), PostCategory.FACILITY, teacher);
             assign(createPlace("4층 실습실 " + index), PostCategory.NETWORK, teacher);
-            User nonTeacher = userRepository.save(User.createStudent("non-teacher-" + UUID.randomUUID() + "@dsm.hs.kr",
-                    "unused", "학생 " + index));
+            String suffix = UUID.randomUUID().toString();
+            User nonTeacher = userRepository.save(User.createStudent("nonteacher" + suffix.substring(0, 8),
+                    "non-teacher-" + suffix + "@dsm.hs.kr", "unused", "학생 " + index));
             assign(createPlace("4층 기타 장소 " + index), PostCategory.FACILITY, nonTeacher);
         }
         entityManager.flush();
@@ -161,8 +163,9 @@ class ManagerListIntegrationTests {
     }
 
     private User createTeacher(String name) {
-        User teacher = userRepository.save(User.createStudent("manager-" + UUID.randomUUID() + "@dsm.hs.kr",
-                "unused", name));
+        String suffix = UUID.randomUUID().toString();
+        User teacher = userRepository.save(User.createStudent("manager" + suffix.substring(0, 8),
+                "manager-" + suffix + "@dsm.hs.kr", "unused", name));
         jdbc.update("UPDATE tbl_user SET role = 'TEACHER' WHERE id = ?", teacher.getId());
         entityManager.detach(teacher);
         return userRepository.findById(teacher.getId()).orElseThrow();
