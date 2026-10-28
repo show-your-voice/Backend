@@ -72,6 +72,21 @@ class ManagerListIntegrationTests {
     }
 
     @Test
+    void keepsSameNamedPlacesIndependentAndDeduplicatesTheirDisplayNames() throws Exception {
+        User first = createTeacher("이선생");
+        User second = createTeacher("김선생");
+        String name = "4층 독서실";
+        assign(createPlace(name), PostCategory.FACILITY, first);
+        assign(createPlace(name), PostCategory.FACILITY, first);
+        assign(createPlace(name), PostCategory.FACILITY, second);
+
+        List<Map<String, Object>> managers = getManagers(student);
+
+        assertThat(findManager(managers, first)).containsEntry("locations", List.of(name));
+        assertThat(findManager(managers, second)).containsEntry("locations", List.of(name));
+    }
+
+    @Test
     void showsOnlyFirstRuleForEachPlaceAndCategory() throws Exception {
         User first = createTeacher("먼저 등록된 선생님");
         User later = createTeacher("나중에 등록된 선생님");
@@ -119,6 +134,9 @@ class ManagerListIntegrationTests {
             User teacher = createTeacher("담당 선생님 " + index);
             assign(createPlace("4층 교실 " + index), PostCategory.FACILITY, teacher);
             assign(createPlace("4층 실습실 " + index), PostCategory.NETWORK, teacher);
+            User nonTeacher = userRepository.save(User.createStudent("non-teacher-" + UUID.randomUUID() + "@dsm.hs.kr",
+                    "unused", "학생 " + index));
+            assign(createPlace("4층 기타 장소 " + index), PostCategory.FACILITY, nonTeacher);
         }
         entityManager.flush();
         entityManager.clear();
