@@ -25,7 +25,8 @@ public enum ErrorCode {
     DUPLICATE_LOGIN_ID(HttpStatus.CONFLICT, "U003", "이미 사용 중인 아이디입니다."),
 
     PLACE_NOT_FOUND(HttpStatus.NOT_FOUND, "L001", "장소를 찾을 수 없습니다."),
-    INVALID_TEACHER_ASSIGNMENT(HttpStatus.CONFLICT, "L002", "장소의 담당자는 선생님 계정이어야 합니다."),
+    INVALID_TEACHER_ASSIGNMENT(HttpStatus.CONFLICT, "L002", "실의 담당자는 선생님 계정이어야 합니다."),
+    ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "R001", "실을 찾을 수 없습니다."),
 
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "게시물을 찾을 수 없습니다."),
     POST_DELETE_DENIED(HttpStatus.FORBIDDEN, "P002", "게시물을 삭제할 권한이 없습니다.");

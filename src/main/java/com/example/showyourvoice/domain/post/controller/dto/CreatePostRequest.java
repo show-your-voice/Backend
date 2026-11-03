@@ -22,9 +22,9 @@ public record CreatePostRequest(
         @NotNull(message = "카테고리를 선택해주세요.")
         PostCategory category,
 
-        @NotNull(message = "장소를 선택해주세요.")
-        @Positive(message = "장소 번호는 양수여야 합니다.")
-        Long placeId,
+        @NotNull(message = "실을 선택해주세요.")
+        @Positive(message = "실 번호는 양수여야 합니다.")
+        Long roomId,
 
         @NotNull(message = "X 좌표를 입력해주세요.")
         @DecimalMin(value = "0", message = "X 좌표는 0 이상 1 이하여야 합니다.")

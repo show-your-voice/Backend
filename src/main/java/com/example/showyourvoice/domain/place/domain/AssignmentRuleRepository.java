@@ -8,10 +8,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AssignmentRuleRepository extends JpaRepository<AssignmentRule, Long> {
 
-    // 같은 장소·카테고리에 규칙이 여러 개면 먼저 등록된 규칙을 쓴다.
+    // 같은 실·카테고리에 규칙이 여러 개면 먼저 등록된 규칙을 쓴다.
     @EntityGraph(attributePaths = "teacher")
-    Optional<AssignmentRule> findFirstByPlaceIdAndCategoryOrderByIdAsc(Long placeId, PostCategory category);
+    Optional<AssignmentRule> findFirstByRoomIdAndCategoryOrderByIdAsc(Long roomId, PostCategory category);
 
-    @EntityGraph(attributePaths = {"teacher", "place"})
-    List<AssignmentRule> findAllByOrderByPlaceNameAscPlaceIdAscIdAsc();
+    @EntityGraph(attributePaths = {"teacher", "room.place"})
+    List<AssignmentRule> findAllByOrderByRoomPlaceNameAscRoomPlaceIdAscIdAsc();
 }

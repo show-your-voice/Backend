@@ -28,6 +28,8 @@ class PostListIntegrationTests extends PostApiTestSupport {
                 .andExpect(jsonPath("$[0].status.label").value("미해결"))
                 .andExpect(jsonPath("$[0].authorName").value("김학생"))
                 .andExpect(jsonPath("$[0].placeName").value("창의관 4층"))
+                .andExpect(jsonPath("$[0].roomId").value(room.getId()))
+                .andExpect(jsonPath("$[0].roomName").value("화장실(남)"))
                 .andExpect(jsonPath("$[0].receivedAt").isNotEmpty());
     }
 
@@ -35,7 +37,7 @@ class PostListIntegrationTests extends PostApiTestSupport {
     void filtersByPlaceAndStatusTogether() throws Exception {
         long inProgress = responseId(mvc.perform(createRequest(Map.of())).andReturn());
         mvc.perform(createRequest(Map.of()));
-        mvc.perform(createRequest(Map.of("placeId", otherPlace.getId())));
+        mvc.perform(createRequest(Map.of("roomId", otherRoom.getId())));
         jdbc.update("UPDATE tbl_post SET status = 'IN_PROGRESS' WHERE id = ?", inProgress);
         entityManager.clear();
 
@@ -50,6 +52,22 @@ class PostListIntegrationTests extends PostApiTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].placeName").value("기숙사 2층"));
+    }
+
+    @Test
+    void includesDifferentRoomsOfSamePlaceAndExcludesOtherPlace() throws Exception {
+        mvc.perform(createRequest(Map.of()));
+        mvc.perform(createRequest(Map.of("roomId", samePlaceRoom.getId())));
+        mvc.perform(createRequest(Map.of("roomId", otherRoom.getId())));
+        entityManager.flush();
+        entityManager.clear();
+
+        mvc.perform(get("/api/posts").param("placeId", place.getId().toString())
+                        .with(user(CustomUserDetails.from(author))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[?(@.roomId == %s)].roomName", room.getId()).value("화장실(남)"))
+                .andExpect(jsonPath("$[?(@.roomId == %s)].roomName", samePlaceRoom.getId()).value("복도"));
     }
 
     @Test

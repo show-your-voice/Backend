@@ -2,6 +2,7 @@ package com.example.showyourvoice.domain.place.domain;
 
 import com.example.showyourvoice.domain.place.exception.InvalidTeacherAssignmentException;
 import com.example.showyourvoice.domain.post.domain.PostCategory;
+import com.example.showyourvoice.domain.room.domain.Room;
 import com.example.showyourvoice.domain.user.domain.Role;
 import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.global.entity.BaseTimeEntity;
@@ -33,8 +34,8 @@ public class AssignmentRule extends BaseTimeEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "place_id", nullable = false)
-    private Place place;
+    @JoinColumn(name = "room_id", nullable = false)
+    private Room room;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "teacher_id", nullable = false)

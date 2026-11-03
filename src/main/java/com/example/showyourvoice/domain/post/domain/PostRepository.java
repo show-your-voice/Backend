@@ -13,14 +13,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("""
             select p from Post p
             join fetch p.author
-            join fetch p.place
-            where (:placeId is null or p.place.id = :placeId)
+            join fetch p.room r
+            join fetch r.place
+            where (:placeId is null or r.place.id = :placeId)
               and (:status is null or p.status = :status)
             order by p.createdAt desc
             """)
     List<Post> findAllByFilter(@Param("placeId") Long placeId, @Param("status") PostStatus status);
 
     @Override
-    @EntityGraph(attributePaths = {"place", "author", "assignee"})
+    @EntityGraph(attributePaths = {"room.place", "author", "assignee"})
     Optional<Post> findById(Long id);
 }

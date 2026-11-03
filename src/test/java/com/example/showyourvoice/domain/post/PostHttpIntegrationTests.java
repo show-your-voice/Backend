@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.showyourvoice.domain.place.domain.Place;
 import com.example.showyourvoice.domain.place.domain.PlaceRepository;
+import com.example.showyourvoice.domain.room.domain.Room;
+import com.example.showyourvoice.domain.room.domain.RoomRepository;
 import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.domain.user.domain.UserRepository;
 import java.net.CookieManager;
@@ -32,6 +34,7 @@ class PostHttpIntegrationTests {
 
     @Autowired private UserRepository userRepository;
     @Autowired private PlaceRepository placeRepository;
+    @Autowired private RoomRepository roomRepository;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JsonMapper jsonMapper;
@@ -41,6 +44,7 @@ class PostHttpIntegrationTests {
     private User author;
     private User teacher;
     private Place place;
+    private Room room;
 
     @BeforeEach
     void prepareCommittedFixturesAndLogin() throws Exception {
@@ -51,10 +55,11 @@ class PostHttpIntegrationTests {
         teacher = userRepository.save(User.createStudent("httpteacher" + idSuffix, "http-teacher-" + suffix + "@dsm.hs.kr", "unused", "이선생"));
         jdbc.update("UPDATE tbl_user SET role = 'TEACHER' WHERE id = ?", teacher.getId());
         place = placeRepository.save(Place.builder().name("창의관 4층").imageUrl("https://example.com/creative-4f.png").build());
+        room = roomRepository.save(Room.builder().name("화장실(남)").place(place).build());
         jdbc.update("""
-                INSERT INTO tbl_assignment_rule (place_id, teacher_id, category, created_at, updated_at)
+                INSERT INTO tbl_assignment_rule (room_id, teacher_id, category, created_at, updated_at)
                 VALUES (?, ?, 'FACILITY', CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6))
-                """, place.getId(), teacher.getId());
+                """, room.getId(), teacher.getId());
         client = HttpClient.newBuilder().cookieHandler(new CookieManager())
                 .connectTimeout(Duration.ofSeconds(5)).build();
 
@@ -71,8 +76,11 @@ class PostHttpIntegrationTests {
         if (author != null) {
             jdbc.update("DELETE FROM tbl_post WHERE author_id = ?", author.getId());
         }
+        if (room != null) {
+            jdbc.update("DELETE FROM tbl_assignment_rule WHERE room_id = ?", room.getId());
+            roomRepository.deleteById(room.getId());
+        }
         if (place != null) {
-            jdbc.update("DELETE FROM tbl_assignment_rule WHERE place_id = ?", place.getId());
             placeRepository.deleteById(place.getId());
         }
         if (teacher != null) {
@@ -88,7 +96,7 @@ class PostHttpIntegrationTests {
         LocalDateTime before = LocalDateTime.now();
         HttpResponse<String> response = post("/api/posts", Map.ofEntries(
                 Map.entry("title", "화장실 세면대 물이 안 나와요"), Map.entry("content", "수도꼭지를 돌려도 물이 나오지 않습니다."),
-                Map.entry("category", "FACILITY"), Map.entry("placeId", place.getId()),
+                Map.entry("category", "FACILITY"), Map.entry("roomId", room.getId()),
                 Map.entry("posX", 0.4215), Map.entry("posY", 0.653), Map.entry("improvement", "수도꼭지를 교체해 주세요."),
                 Map.entry("authorId", teacher.getId()), Map.entry("assigneeId", author.getId()),
                 Map.entry("status", "RESOLVED"), Map.entry("receivedAt", "2000-01-01T00:00:00")));
@@ -106,6 +114,8 @@ class PostHttpIntegrationTests {
         assertThat(created.at("/place/id").asLong()).isEqualTo(place.getId());
         assertThat(created.at("/place/name").asString()).isEqualTo("창의관 4층");
         assertThat(created.at("/place/imageUrl").asString()).isEqualTo("https://example.com/creative-4f.png");
+        assertThat(created.at("/room/id").asLong()).isEqualTo(room.getId());
+        assertThat(created.at("/room/name").asString()).isEqualTo("화장실(남)");
         assertThat(created.get("posX").decimalValue()).isEqualByComparingTo("0.4215");
         assertThat(created.get("posY").decimalValue()).isEqualByComparingTo("0.653");
         assertThat(created.at("/author/id").asLong()).isEqualTo(author.getId());
@@ -123,7 +133,7 @@ class PostHttpIntegrationTests {
                 .containsEntry("content", "수도꼭지를 돌려도 물이 나오지 않습니다.")
                 .containsEntry("improvement", "수도꼭지를 교체해 주세요.")
                 .containsEntry("category", "FACILITY").containsEntry("status", "UNRESOLVED")
-                .containsEntry("place_id", place.getId()).containsEntry("author_id", author.getId())
+                .containsEntry("room_id", room.getId()).containsEntry("author_id", author.getId())
                 .containsEntry("assignee_id", teacher.getId());
         assertThat(stored.get("created_at")).isNotNull();
 
@@ -134,11 +144,11 @@ class PostHttpIntegrationTests {
 
     @Test
     void commitsOptionalImprovementAndUnassignedTeacherAsNullThroughHttp() throws Exception {
-        jdbc.update("DELETE FROM tbl_assignment_rule WHERE place_id = ?", place.getId());
+        jdbc.update("DELETE FROM tbl_assignment_rule WHERE room_id = ?", room.getId());
 
         HttpResponse<String> response = post("/api/posts", Map.of(
                 "title", "와이파이 연결이 끊겨요", "content", "인터넷 연결을 확인해 주세요.",
-                "category", "NETWORK", "placeId", place.getId(), "posX", 0.1, "posY", 0.2));
+                "category", "NETWORK", "roomId", room.getId(), "posX", 0.1, "posY", 0.2));
 
         assertThat(response.statusCode()).isEqualTo(201);
         JsonNode created = jsonMapper.readTree(response.body());
