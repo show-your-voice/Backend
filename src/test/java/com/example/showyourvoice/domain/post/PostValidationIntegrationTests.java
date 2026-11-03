@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.example.showyourvoice.global.security.CustomUserDetails;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ class PostValidationIntegrationTests extends PostApiTestSupport {
                 Map.of("title", "   "), Map.of("title", "가".repeat(101)),
                 Map.of("content", ""), Map.of("content", "가".repeat(5001)),
                 Map.of("category", "UNKNOWN"), Collections.singletonMap("category", null),
-                Collections.singletonMap("placeId", null), Map.of("placeId", 0), Map.of("placeId", -1),
+                Collections.singletonMap("roomId", null), Map.of("roomId", 0), Map.of("roomId", -1),
                 Map.of("improvement", "가".repeat(1001)),
                 Collections.singletonMap("posX", null), Map.of("posX", -0.1), Map.of("posX", 1.1),
                 Map.of("posX", 0.12345), Collections.singletonMap("posY", null), Map.of("posY", 1.0001));
@@ -49,10 +50,21 @@ class PostValidationIntegrationTests extends PostApiTestSupport {
     }
 
     @Test
-    void rejectsCreationWhenPlaceDoesNotExist() throws Exception {
-        mvc.perform(createRequest(Map.of("placeId", Long.MAX_VALUE)))
-                .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("L001"))
-                .andExpect(jsonPath("$.errors[0].field").value("placeId"));
+    void rejectsPlaceIdWithoutRoomId() throws Exception {
+        Map<String, Object> fields = new HashMap<>();
+        fields.put("placeId", place.getId());
+        fields.put("roomId", null);
+
+        mvc.perform(createRequest(fields))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("roomId"));
+    }
+
+    @Test
+    void rejectsCreationWhenRoomDoesNotExist() throws Exception {
+        mvc.perform(createRequest(Map.of("roomId", Long.MAX_VALUE)))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("R001"))
+                .andExpect(jsonPath("$.errors[0].field").value("roomId"));
     }
 
     @Test

@@ -7,6 +7,8 @@ import com.example.showyourvoice.domain.place.domain.Place;
 import com.example.showyourvoice.domain.place.domain.PlaceRepository;
 import com.example.showyourvoice.domain.post.domain.PostCategory;
 import com.example.showyourvoice.domain.post.domain.PostRepository;
+import com.example.showyourvoice.domain.room.domain.Room;
+import com.example.showyourvoice.domain.room.domain.RoomRepository;
 import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.domain.user.domain.UserRepository;
 import com.example.showyourvoice.global.security.CustomUserDetails;
@@ -37,6 +39,7 @@ abstract class PostApiTestSupport {
     @Autowired protected UserRepository userRepository;
     @Autowired protected PlaceRepository placeRepository;
     @Autowired protected PostRepository postRepository;
+    @Autowired protected RoomRepository roomRepository;
     @Autowired protected JdbcTemplate jdbc;
     @Autowired protected EntityManager entityManager;
 
@@ -45,6 +48,9 @@ abstract class PostApiTestSupport {
     protected User teacher;
     protected Place place;
     protected Place otherPlace;
+    protected Room room;
+    protected Room samePlaceRoom;
+    protected Room otherRoom;
 
     @BeforeEach
     void prepareFixtures() {
@@ -58,11 +64,14 @@ abstract class PostApiTestSupport {
         teacher = userRepository.findById(teacher.getId()).orElseThrow();
         place = placeRepository.save(Place.builder().name("창의관 4층").imageUrl("https://example.com/creative-4f.png").build());
         otherPlace = placeRepository.save(Place.builder().name("기숙사 2층").imageUrl("https://example.com/dorm-2f.png").build());
+        room = roomRepository.save(Room.builder().name("화장실(남)").place(place).build());
+        samePlaceRoom = roomRepository.save(Room.builder().name("복도").place(place).build());
+        otherRoom = roomRepository.save(Room.builder().name("복도").place(otherPlace).build());
     }
 
-    protected void assignTeacher(Place target, PostCategory category, User assignee) {
+    protected void assignTeacher(Room target, PostCategory category, User assignee) {
         jdbc.update("""
-                INSERT INTO tbl_assignment_rule (place_id, teacher_id, category, created_at, updated_at)
+                INSERT INTO tbl_assignment_rule (room_id, teacher_id, category, created_at, updated_at)
                 VALUES (?, ?, ?, CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6))
                 """, target.getId(), assignee.getId(), category.name());
     }
@@ -72,7 +81,7 @@ abstract class PostApiTestSupport {
         body.put("title", "화장실 세면대 물이 안 나와요");
         body.put("content", "2번째 세면대 수도꼭지를 돌려도 물이 나오지 않습니다.");
         body.put("category", "FACILITY");
-        body.put("placeId", place.getId());
+        body.put("roomId", room.getId());
         body.put("posX", 0.4215);
         body.put("posY", 0.653);
         body.putAll(overrides);

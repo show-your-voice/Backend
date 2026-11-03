@@ -11,6 +11,8 @@ public record PostSummaryResponse(
         StatusInfo status,
         String authorName,
         String placeName,
+        Long roomId,
+        String roomName,
         LocalDateTime receivedAt
 ) {
 
@@ -18,6 +20,7 @@ public record PostSummaryResponse(
         return new PostSummaryResponse(
                 post.getId(), post.getTitle(), post.getContent(),
                 new StatusInfo(post.getStatus(), post.getStatus().getLabel()),
-                post.getAuthor().getName(), post.getPlace().getName(), post.getCreatedAt());
+                post.getAuthor().getName(), post.getRoom().getPlace().getName(),
+                post.getRoom().getId(), post.getRoom().getName(), post.getCreatedAt());
     }
 }

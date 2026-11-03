@@ -28,7 +28,7 @@ class PostCreationIntegrationTests extends PostApiTestSupport {
 
     @Test
     void createsAndReadsCompleteReportWhenTeacherIsAssigned() throws Exception {
-        assignTeacher(place, PostCategory.FACILITY, teacher);
+        assignTeacher(room, PostCategory.FACILITY, teacher);
         LocalDateTime before = LocalDateTime.now();
 
         MvcResult result = mvc.perform(createRequest(Map.of(
@@ -45,6 +45,8 @@ class PostCreationIntegrationTests extends PostApiTestSupport {
                 .andExpect(jsonPath("$.assignee.name").value("이선생"))
                 .andExpect(jsonPath("$.place.name").value("창의관 4층"))
                 .andExpect(jsonPath("$.place.imageUrl").value("https://example.com/creative-4f.png"))
+                .andExpect(jsonPath("$.room.id").value(room.getId()))
+                .andExpect(jsonPath("$.room.name").value("화장실(남)"))
                 .andExpect(jsonPath("$.posX").value(0.4215))
                 .andExpect(jsonPath("$.posY").value(0.653))
                 .andExpect(jsonPath("$.category.code").value("FACILITY"))
@@ -64,7 +66,8 @@ class PostCreationIntegrationTests extends PostApiTestSupport {
         assertThat(persisted.getContent()).isEqualTo("2번째 세면대 수도꼭지를 돌려도 물이 나오지 않습니다.");
         assertThat(persisted.getImprovement()).isEqualTo("수도꼭지를 교체해 주세요.");
         assertThat(persisted.getCategory()).isEqualTo(PostCategory.FACILITY);
-        assertThat(persisted.getPlace().getId()).isEqualTo(place.getId());
+        assertThat(persisted.getRoom().getPlace().getId()).isEqualTo(place.getId());
+        assertThat(persisted.getRoom().getId()).isEqualTo(room.getId());
         assertThat(persisted.getPosX()).isEqualByComparingTo("0.4215");
         assertThat(persisted.getPosY()).isEqualByComparingTo("0.653");
         assertThat(persisted.getAuthor().getId()).isEqualTo(author.getId());
@@ -79,6 +82,7 @@ class PostCreationIntegrationTests extends PostApiTestSupport {
                 .andExpect(jsonPath("$.improvement").value("수도꼭지를 교체해 주세요."))
                 .andExpect(jsonPath("$.assignee.id").value(teacher.getId()))
                 .andExpect(jsonPath("$.author.email").value(author.getEmail()))
+                .andExpect(jsonPath("$.room.id").value(room.getId()))
                 .andExpect(jsonPath("$.receivedAt").isNotEmpty())
                 .andExpect(jsonPath("$.author.password").doesNotExist());
     }
@@ -99,8 +103,8 @@ class PostCreationIntegrationTests extends PostApiTestSupport {
     }
 
     @Test
-    void createsUnassignedReportWhenOptionalFieldsAndPlaceMappingAreAbsent() throws Exception {
-        assignTeacher(otherPlace, PostCategory.FACILITY, teacher);
+    void createsUnassignedReportWhenOptionalFieldsAndRoomMappingAreAbsent() throws Exception {
+        assignTeacher(otherRoom, PostCategory.FACILITY, teacher);
 
         mvc.perform(createRequest(Map.of()))
                 .andExpect(status().isCreated())
@@ -141,8 +145,8 @@ class PostCreationIntegrationTests extends PostApiTestSupport {
 
     @ParameterizedTest
     @EnumSource(PostCategory.class)
-    void assignsTeacherOfMatchingPlaceAndCategoryRule(PostCategory category) throws Exception {
-        assignTeacher(place, category, teacher);
+    void assignsTeacherOfMatchingRoomAndCategoryRule(PostCategory category) throws Exception {
+        assignTeacher(room, category, teacher);
 
         mvc.perform(createRequest(Map.of("category", category.name())))
                 .andExpect(status().isCreated())
@@ -150,11 +154,21 @@ class PostCreationIntegrationTests extends PostApiTestSupport {
     }
 
     @Test
-    void leavesUnassignedWhenOnlyOtherCategoryRuleExistsForPlace() throws Exception {
-        assignTeacher(place, PostCategory.NETWORK, teacher);
+    void leavesUnassignedWhenOnlyOtherCategoryRuleExistsForRoom() throws Exception {
+        assignTeacher(room, PostCategory.NETWORK, teacher);
 
         mvc.perform(createRequest(Map.of("category", "FACILITY")))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.assignee").value(nullValue()));
+    }
+
+    @Test
+    void leavesUnassignedWhenOnlyAnotherRoomInSamePlaceHasRule() throws Exception {
+        assignTeacher(samePlaceRoom, PostCategory.FACILITY, teacher);
+
+        mvc.perform(createRequest(Map.of()))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.room.id").value(room.getId()))
                 .andExpect(jsonPath("$.assignee").value(nullValue()));
     }
 
@@ -164,8 +178,8 @@ class PostCreationIntegrationTests extends PostApiTestSupport {
                 User.createStudent("later" + UUID.randomUUID().toString().substring(0, 8),
                         "later-" + UUID.randomUUID() + "@dsm.hs.kr", "unused", "박선생"));
         jdbc.update("UPDATE tbl_user SET role = 'TEACHER' WHERE id = ?", laterTeacher.getId());
-        assignTeacher(place, PostCategory.FACILITY, teacher);
-        assignTeacher(place, PostCategory.FACILITY, laterTeacher);
+        assignTeacher(room, PostCategory.FACILITY, teacher);
+        assignTeacher(room, PostCategory.FACILITY, laterTeacher);
         entityManager.clear();
 
         mvc.perform(createRequest(Map.of("category", "FACILITY")))
@@ -174,10 +188,10 @@ class PostCreationIntegrationTests extends PostApiTestSupport {
     }
 
     @Test
-    void keepsOriginalAssigneeWhenPlaceMappingChangesAfterCreation() throws Exception {
-        assignTeacher(place, PostCategory.FACILITY, teacher);
+    void keepsOriginalAssigneeWhenRoomMappingChangesAfterCreation() throws Exception {
+        assignTeacher(room, PostCategory.FACILITY, teacher);
         long id = responseId(mvc.perform(createRequest(Map.of())).andExpect(status().isCreated()).andReturn());
-        jdbc.update("DELETE FROM tbl_assignment_rule WHERE place_id = ?", place.getId());
+        jdbc.update("DELETE FROM tbl_assignment_rule WHERE room_id = ?", room.getId());
         entityManager.clear();
 
         mvc.perform(get("/api/posts/{id}", id).with(user(CustomUserDetails.from(author))))
@@ -187,7 +201,7 @@ class PostCreationIntegrationTests extends PostApiTestSupport {
 
     @Test
     void rejectsStudentMappingWithoutPersistingPostWhenDatabaseMappingIsInvalid() throws Exception {
-        assignTeacher(place, PostCategory.FACILITY, otherUser);
+        assignTeacher(room, PostCategory.FACILITY, otherUser);
         long count = postRepository.count();
 
         mvc.perform(createRequest(Map.of()))

@@ -1,6 +1,6 @@
 package com.example.showyourvoice.domain.post.domain;
 
-import com.example.showyourvoice.domain.place.domain.Place;
+import com.example.showyourvoice.domain.room.domain.Room;
 import com.example.showyourvoice.domain.user.domain.Role;
 import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.global.entity.BaseTimeEntity;
@@ -72,17 +72,17 @@ public class Post extends BaseTimeEntity {
     private LocalDateTime resolvedAt;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "place_id", nullable = false)
-    private Place place;
+    @JoinColumn(name = "room_id", nullable = false)
+    private Room room;
 
     @Builder
     private Post(String title, String content, String improvement, PostCategory category,
-                 Place place, BigDecimal posX, BigDecimal posY, User author, User assignee) {
+                 Room room, BigDecimal posX, BigDecimal posY, User author, User assignee) {
         this.title = title.strip();
         this.content = content.strip();
         this.improvement = improvement == null || improvement.isBlank() ? null : improvement.strip();
         this.category = category;
-        this.place = place;
+        this.room = room;
         this.posX = posX;
         this.posY = posY;
         this.author = author;

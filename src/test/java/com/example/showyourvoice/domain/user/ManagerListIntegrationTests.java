@@ -9,12 +9,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.example.showyourvoice.domain.place.domain.Place;
 import com.example.showyourvoice.domain.place.domain.PlaceRepository;
 import com.example.showyourvoice.domain.post.domain.PostCategory;
+import com.example.showyourvoice.domain.room.domain.Room;
+import com.example.showyourvoice.domain.room.domain.RoomRepository;
 import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.domain.user.domain.UserRepository;
 import com.example.showyourvoice.global.security.CustomUserDetails;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.persistence.EntityManager;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -37,10 +40,12 @@ class ManagerListIntegrationTests {
     @Autowired private MockMvc mvc;
     @Autowired private UserRepository userRepository;
     @Autowired private PlaceRepository placeRepository;
+    @Autowired private RoomRepository roomRepository;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private EntityManager entityManager;
 
     private User student;
+    private final Map<Long, Room> roomsByPlace = new HashMap<>();
 
     @BeforeEach
     void prepareStudent() {
@@ -88,7 +93,7 @@ class ManagerListIntegrationTests {
     }
 
     @Test
-    void showsOnlyFirstRuleForEachPlaceAndCategory() throws Exception {
+    void showsOnlyFirstRuleForEachRoomAndCategory() throws Exception {
         User first = createTeacher("먼저 등록된 선생님");
         User later = createTeacher("나중에 등록된 선생님");
         Place place = createPlace("4층 독서실");
@@ -176,10 +181,12 @@ class ManagerListIntegrationTests {
     }
 
     private void assign(Place place, PostCategory category, User teacher) {
+        Room room = roomsByPlace.computeIfAbsent(place.getId(), id ->
+                roomRepository.save(Room.builder().name(place.getName()).place(place).build()));
         jdbc.update("""
-                INSERT INTO tbl_assignment_rule (place_id, teacher_id, category, created_at, updated_at)
+                INSERT INTO tbl_assignment_rule (room_id, teacher_id, category, created_at, updated_at)
                 VALUES (?, ?, ?, CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6))
-                """, place.getId(), teacher.getId(), category.name());
+                """, room.getId(), teacher.getId(), category.name());
     }
 
     private List<Map<String, Object>> getManagers(User reader) throws Exception {

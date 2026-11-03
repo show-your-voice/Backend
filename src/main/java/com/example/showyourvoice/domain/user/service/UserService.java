@@ -49,12 +49,12 @@ public class UserService {
     }
 
     private Map<Long, Set<String>> getLocationsByTeacher() {
-        Set<PlaceCategory> processedPlaceCategories = new HashSet<>();
+        Set<RoomCategory> processedRoomCategories = new HashSet<>();
         Map<Long, Set<String>> locationsByTeacher = new HashMap<>();
 
-        for (AssignmentRule rule : assignmentRuleRepository.findAllByOrderByPlaceNameAscPlaceIdAscIdAsc()) {
-            PlaceCategory placeCategory = new PlaceCategory(rule.getPlace().getId(), rule.getCategory());
-            if (!processedPlaceCategories.add(placeCategory)) {
+        for (AssignmentRule rule : assignmentRuleRepository.findAllByOrderByRoomPlaceNameAscRoomPlaceIdAscIdAsc()) {
+            RoomCategory roomCategory = new RoomCategory(rule.getRoom().getId(), rule.getCategory());
+            if (!processedRoomCategories.add(roomCategory)) {
                 continue;
             }
 
@@ -64,11 +64,11 @@ public class UserService {
             }
 
             locationsByTeacher.computeIfAbsent(teacher.getId(), id -> new LinkedHashSet<>())
-                    .add(rule.getPlace().getName());
+                    .add(rule.getRoom().getPlace().getName());
         }
         return locationsByTeacher;
     }
 
-    private record PlaceCategory(Long placeId, PostCategory category) {
+    private record RoomCategory(Long roomId, PostCategory category) {
     }
 }
