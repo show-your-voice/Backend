@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/login-ids/*/availability").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/images/places").hasRole("TEACHER")
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
