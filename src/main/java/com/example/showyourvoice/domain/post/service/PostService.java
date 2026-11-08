@@ -1,11 +1,14 @@
 package com.example.showyourvoice.domain.post.service;
 
+import com.example.showyourvoice.domain.image.domain.ImagePurpose;
+import com.example.showyourvoice.domain.image.service.ImageService;
 import com.example.showyourvoice.domain.place.domain.AssignmentRule;
 import com.example.showyourvoice.domain.place.domain.AssignmentRuleRepository;
 import com.example.showyourvoice.domain.post.controller.dto.CreatePostRequest;
 import com.example.showyourvoice.domain.post.controller.dto.PostDetailResponse;
 import com.example.showyourvoice.domain.post.controller.dto.PostSummaryResponse;
 import com.example.showyourvoice.domain.post.domain.Post;
+import com.example.showyourvoice.domain.post.domain.PostImage;
 import com.example.showyourvoice.domain.post.domain.PostImageRepository;
 import com.example.showyourvoice.domain.post.domain.PostRepository;
 import com.example.showyourvoice.domain.post.domain.PostStatus;
@@ -19,6 +22,7 @@ import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.domain.user.domain.UserRepository;
 import com.example.showyourvoice.domain.user.exception.UserNotFoundException;
 import java.util.List;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +37,7 @@ public class PostService {
     private final RoomRepository roomRepository;
     private final AssignmentRuleRepository assignmentRuleRepository;
     private final UserRepository userRepository;
+    private final ImageService imageService;
 
     @Transactional
     public PostDetailResponse createPost(CreatePostRequest request, Long userId) {
@@ -41,12 +46,17 @@ public class PostService {
         User assignee = assignmentRuleRepository.findFirstByRoomIdAndCategoryOrderByIdAsc(room.getId(), request.category())
                 .map(AssignmentRule::assignedTeacher)
                 .orElse(null);
+        List<String> imageUrls = request.imageUrlsOrEmpty();
+        imageUrls.forEach(imageUrl -> imageService.verifyUploaded(imageUrl, ImagePurpose.POST));
 
-        Post post = Post.builder()
+        Post post = postRepository.save(Post.builder()
                 .title(request.title()).content(request.content()).improvement(request.improvement())
                 .category(request.category()).room(room).posX(request.posX()).posY(request.posY())
-                .author(author).assignee(assignee).build();
-        return PostDetailResponse.of(postRepository.save(post), List.of());
+                .author(author).assignee(assignee).build());
+        List<PostImage> images = postImageRepository.saveAll(IntStream.range(0, imageUrls.size())
+                .mapToObj(i -> PostImage.builder().post(post).imageUrl(imageUrls.get(i)).sortOrder(i).build())
+                .toList());
+        return PostDetailResponse.of(post, images);
     }
 
     public List<PostSummaryResponse> getPosts(Long placeId, PostStatus status) {

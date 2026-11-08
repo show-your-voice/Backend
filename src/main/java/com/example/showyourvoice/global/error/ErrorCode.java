@@ -34,7 +34,8 @@ public enum ErrorCode {
     // Image
     INVALID_IMAGE(HttpStatus.BAD_REQUEST, "I001", "jpg, png, webp 형식의 이미지만 올릴 수 있습니다."),
     IMAGE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "I002", "이미지는 5MB 이하여야 합니다."),
-    IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "I003", "이미지를 저장하지 못했습니다.");
+    IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "I003", "이미지를 저장하지 못했습니다."),
+    IMAGE_NOT_FOUND(HttpStatus.BAD_REQUEST, "I004", "업로드한 사진을 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;

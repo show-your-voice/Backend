@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
+import java.util.List;
 
 public record CreatePostRequest(
         @NotBlank(message = "제목을 입력해주세요.")
@@ -39,6 +40,14 @@ public record CreatePostRequest(
         BigDecimal posY,
 
         @Size(max = 1000, message = "개선방향은 1000자 이하여야 합니다.")
-        String improvement
+        String improvement,
+
+        // 사진 업로드 API(POST /api/images/posts)가 돌려준 주소. 보낸 순서대로 저장한다.
+        @Size(max = 5, message = "사진은 5장까지 첨부할 수 있습니다.")
+        List<@NotBlank(message = "사진 주소를 입력해주세요.") String> imageUrls
 ) {
+
+    public List<String> imageUrlsOrEmpty() {
+        return imageUrls == null ? List.of() : imageUrls;
+    }
 }
