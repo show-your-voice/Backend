@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -32,4 +33,11 @@ public class PostImage {
 
     @Column(nullable = false)
     private int sortOrder;
+
+    @Builder
+    private PostImage(Post post, String imageUrl, int sortOrder) {
+        this.post = post;
+        this.imageUrl = imageUrl;
+        this.sortOrder = sortOrder;
+    }
 }

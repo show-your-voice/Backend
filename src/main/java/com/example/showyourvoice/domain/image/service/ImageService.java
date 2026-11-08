@@ -3,6 +3,7 @@ package com.example.showyourvoice.domain.image.service;
 import com.example.showyourvoice.domain.image.controller.dto.ImageUploadResponse;
 import com.example.showyourvoice.domain.image.domain.ImagePurpose;
 import com.example.showyourvoice.domain.image.domain.ImageType;
+import com.example.showyourvoice.domain.image.exception.ImageNotFoundException;
 import com.example.showyourvoice.domain.image.exception.ImageTooLargeException;
 import com.example.showyourvoice.domain.image.exception.ImageUploadFailedException;
 import com.example.showyourvoice.domain.image.exception.InvalidImageException;
@@ -13,6 +14,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +24,10 @@ import org.springframework.web.multipart.MultipartFile;
 public class ImageService {
 
     public static final long MAX_SIZE_BYTES = 5L * 1024 * 1024;
+
+    // upload()가 만드는 파일 이름 형식 (UUID.확장자)
+    private static final Pattern SAVED_FILE_NAME = Pattern.compile(
+            "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(jpg|png|webp)");
 
     private final ImageProperties imageProperties;
 
@@ -49,8 +55,21 @@ public class ImageService {
         }
     }
 
+    // 우리 서버가 돌려준 주소이고, 실제로 저장된 파일이 있는지 확인한다.
+    public void verifyUploaded(String imageUrl, ImagePurpose purpose) {
+        String prefix = WebConfig.IMAGE_URL_PREFIX + purpose.getDirectory() + "/";
+        String fileName = imageUrl.startsWith(prefix) ? imageUrl.substring(prefix.length()) : "";
+        if (!SAVED_FILE_NAME.matcher(fileName).matches() || !Files.isRegularFile(directoryOf(purpose).resolve(fileName))) {
+            throw new ImageNotFoundException();
+        }
+    }
+
+    private Path directoryOf(ImagePurpose purpose) {
+        return imageProperties.resolvedUploadDir().resolve(purpose.getDirectory());
+    }
+
     private void save(MultipartFile file, ImagePurpose purpose, String fileName) {
-        Path directory = imageProperties.resolvedUploadDir().resolve(purpose.getDirectory());
+        Path directory = directoryOf(purpose);
         try (InputStream input = file.getInputStream()) {
             Files.createDirectories(directory);
             Files.copy(input, directory.resolve(fileName));
