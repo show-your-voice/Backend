@@ -8,15 +8,20 @@ import com.example.showyourvoice.domain.post.controller.dto.CreatePostRequest;
 import com.example.showyourvoice.domain.post.controller.dto.PostDetailResponse;
 import com.example.showyourvoice.domain.post.controller.dto.PostSummaryResponse;
 import com.example.showyourvoice.domain.post.domain.Post;
+import com.example.showyourvoice.domain.post.domain.PostCoAssignee;
+import com.example.showyourvoice.domain.post.domain.PostCoAssigneeRepository;
 import com.example.showyourvoice.domain.post.domain.PostImage;
 import com.example.showyourvoice.domain.post.domain.PostImageRepository;
 import com.example.showyourvoice.domain.post.domain.PostRepository;
 import com.example.showyourvoice.domain.post.domain.PostStatus;
+import com.example.showyourvoice.domain.post.exception.DuplicatePostCoAssigneeException;
+import com.example.showyourvoice.domain.post.exception.PostCoAssigneeDeniedException;
 import com.example.showyourvoice.domain.post.exception.PostDeleteDeniedException;
 import com.example.showyourvoice.domain.post.exception.PostNotFoundException;
 import com.example.showyourvoice.domain.room.domain.Room;
 import com.example.showyourvoice.domain.room.domain.RoomRepository;
 import com.example.showyourvoice.domain.room.exception.RoomNotFoundException;
+import com.example.showyourvoice.domain.user.controller.dto.UserInfoResponse;
 import com.example.showyourvoice.domain.user.domain.Role;
 import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.domain.user.domain.UserRepository;
@@ -34,6 +39,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
+    private final PostCoAssigneeRepository postCoAssigneeRepository;
     private final RoomRepository roomRepository;
     private final AssignmentRuleRepository assignmentRuleRepository;
     private final UserRepository userRepository;
@@ -67,17 +73,43 @@ public class PostService {
 
     public PostDetailResponse getPost(Long postId) {
         Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
-        return PostDetailResponse.of(post, postImageRepository.findAllByPostIdOrderBySortOrderAsc(postId));
+        return detailResponse(post);
+    }
+
+    @Transactional
+    public PostDetailResponse addCoAssignee(Long postId, Long managerId, Role role) {
+        if (role != Role.TEACHER) {
+            throw new PostCoAssigneeDeniedException();
+        }
+
+        Post post = postRepository.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new);
+        User manager = userRepository.findById(managerId).orElseThrow(UserNotFoundException::new);
+        PostCoAssignee assignment = PostCoAssignee.assign(post, manager);
+        if ((post.getAssignee() != null && post.getAssignee().getId().equals(managerId))
+                || postCoAssigneeRepository.existsByPostIdAndManagerId(postId, managerId)) {
+            throw new DuplicatePostCoAssigneeException();
+        }
+
+        postCoAssigneeRepository.save(assignment);
+        return detailResponse(post);
+    }
+
+    private PostDetailResponse detailResponse(Post post) {
+        List<UserInfoResponse> coAssignees = postCoAssigneeRepository.findAllByPostIdOrderByIdAsc(post.getId()).stream()
+                .map(assignment -> UserInfoResponse.from(assignment.getManager()))
+                .toList();
+        return PostDetailResponse.of(post, postImageRepository.findAllByPostIdOrderBySortOrderAsc(post.getId()), coAssignees);
     }
 
     @Transactional
     public void deletePost(Long postId, Long userId, Role role) {
-        Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+        Post post = postRepository.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new);
         if (!post.isDeletableBy(userId, role)) {
             throw new PostDeleteDeniedException();
         }
 
         postImageRepository.deleteAllByPostId(postId);
+        postCoAssigneeRepository.deleteAllByPostId(postId);
         postRepository.delete(post);
     }
 }

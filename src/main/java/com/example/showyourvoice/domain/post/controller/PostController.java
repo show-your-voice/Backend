@@ -1,5 +1,6 @@
 package com.example.showyourvoice.domain.post.controller;
 
+import com.example.showyourvoice.domain.post.controller.dto.AddPostCoAssigneeRequest;
 import com.example.showyourvoice.domain.post.controller.dto.CreatePostRequest;
 import com.example.showyourvoice.domain.post.controller.dto.PostDetailResponse;
 import com.example.showyourvoice.domain.post.controller.dto.PostSummaryResponse;
@@ -51,5 +52,12 @@ public class PostController {
                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
         postService.deletePost(postId, userDetails.getUserId(), userDetails.getRole());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{postId}/co-assignees")
+    public ResponseEntity<PostDetailResponse> addCoAssignee(@PathVariable Long postId,
+                                                           @Valid @RequestBody AddPostCoAssigneeRequest request,
+                                                           @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(postService.addCoAssignee(postId, request.managerId(), userDetails.getRole()));
     }
 }

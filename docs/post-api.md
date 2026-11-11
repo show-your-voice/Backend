@@ -53,6 +53,7 @@
   "posY": 0.6530,
   "author": { "id": 10, "loginId": "student01", "email": "student01@dsm.hs.kr", "name": "김학생", "role": "USER" },
   "assignee": { "id": 20, "loginId": "teacher01", "email": "teacher@dsm.hs.kr", "name": "이선생", "role": "TEACHER" },
+  "coAssignees": [],
   "status": { "code": "UNRESOLVED", "label": "미해결" },
   "imageUrls": [],
   "receivedAt": "2026-10-21T10:30:00.123456",
@@ -66,6 +67,27 @@
 ## 게시물 상세 조회
 
 `GET /api/posts/{id}`는 생성 응답과 같은 구조를 반환한다. `imageUrls`는 `sort_order` 오름차순이며 사진이 없으면 빈 배열이다.
+
+`assignee`는 자동 지정된 기존 담당자이며 `coAssignees`는 추가된 공동 담당자 목록이다.
+공동 담당자가 없으면 빈 배열이고, 추가 순서대로 `UserInfoResponse` 구조를 반환한다.
+
+## 공동 담당자 추가
+
+`POST /api/posts/{postId}/co-assignees`, `Content-Type: application/json`
+
+```json
+{ "managerId": 21 }
+```
+
+로그인한 선생님(`TEACHER`)이 `GET /api/managers`에서 고른 선생님 ID를 보낸다.
+성공 시 `200 OK`와 갱신된 게시물 상세를 반환한다. 기존 `assignee`는 유지되며
+`coAssignees`에 선택한 선생님이 추가된다. `managerId`는 필수 양수다.
+기존 담당자나 이미 추가된 공동 담당자는 다시 추가할 수 없다.
+
+관계는 `tbl_post_co_assignee`에 저장하고 `(post_id, manager_id)` 유니크 제약으로
+중복을 방지한다. 같은 신고의 추가와 삭제는 신고 행 잠금으로 직렬화한다.
+스키마 자동 업데이트를 사용하지 않는 배포 환경은 이 엔티티에 대응하는 테이블과
+외래키·유니크 제약을 먼저 적용해야 한다.
 
 ## 게시물 목록 조회
 
@@ -91,7 +113,7 @@
 
 `DELETE /api/posts/{id}`
 
-작성자 본인 또는 선생님(`TEACHER`)만 삭제할 수 있다. 성공 시 `204 No Content`를 반환하고 첨부 사진 정보도 함께 삭제한다. 다른 사용자가 요청하면 `403 P002`를 반환한다.
+작성자 본인 또는 선생님(`TEACHER`)만 삭제할 수 있다. 성공 시 `204 No Content`를 반환하고 첨부 사진 정보와 공동 담당자 관계도 함께 삭제한다. 선생님 계정은 삭제하지 않는다. 다른 사용자가 요청하면 `403 P002`를 반환한다.
 
 ## 담당 규칙 DB 등록
 
@@ -120,8 +142,12 @@ FROM tbl_user WHERE id = @teacher_id AND role = 'TEACHER';
 | 400 | I004 | 업로드하지 않은 사진 주소 |
 | 401 | A001 | 로그인 필요 |
 | 403 | P002 | 게시물 삭제 권한 없음 |
+| 403 | P003 | 공동 담당자 추가 권한 없음 |
+| 404 | U002 | 존재하지 않는 공동 담당자 계정 |
 | 404 | L001 | 존재하지 않는 장소 |
 | 404 | P001 | 존재하지 않는 게시물 |
 | 409 | L002 | 담당 규칙의 계정 역할 오류 |
+| 409 | P004 | 공동 담당자로 학생 계정을 선택함 |
+| 409 | P005 | 기존 담당자 또는 이미 추가된 공동 담당자 |
 
 입력란 검증 오류는 기존 `{ "code", "message", "errors": [{ "field", "reason" }] }` 형식이며 잘못된 카테고리는 `category`, 없는 장소는 `placeId`, 사진 개수 초과나 잘못된 사진 주소는 `imageUrls`를 표시한다.
