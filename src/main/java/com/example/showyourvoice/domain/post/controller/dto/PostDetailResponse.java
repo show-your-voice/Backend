@@ -23,6 +23,7 @@ public record PostDetailResponse(
         BigDecimal posY,
         UserInfoResponse author,
         UserInfoResponse assignee,
+        List<UserInfoResponse> coAssignees,
         StatusInfo status,
         List<String> imageUrls,
         LocalDateTime receivedAt,
@@ -31,6 +32,10 @@ public record PostDetailResponse(
 ) {
 
     public static PostDetailResponse of(Post post, List<PostImage> images) {
+        return of(post, images, List.of());
+    }
+
+    public static PostDetailResponse of(Post post, List<PostImage> images, List<UserInfoResponse> coAssignees) {
         return new PostDetailResponse(
                 post.getId(), post.getTitle(), post.getContent(), post.getImprovement(),
                 new CategoryInfo(post.getCategory(), post.getCategory().getLabel()),
@@ -38,6 +43,7 @@ public record PostDetailResponse(
                 post.getPosX(), post.getPosY(),
                 UserInfoResponse.from(post.getAuthor()),
                 post.getAssignee() == null ? null : UserInfoResponse.from(post.getAssignee()),
+                List.copyOf(coAssignees),
                 new StatusInfo(post.getStatus(), post.getStatus().getLabel()),
                 images.stream().map(PostImage::getImageUrl).toList(),
                 post.getCreatedAt(), post.getInProgressAt(), post.getResolvedAt());

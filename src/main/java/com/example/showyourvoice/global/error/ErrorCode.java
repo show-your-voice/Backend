@@ -30,6 +30,9 @@ public enum ErrorCode {
 
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "게시물을 찾을 수 없습니다."),
     POST_DELETE_DENIED(HttpStatus.FORBIDDEN, "P002", "게시물을 삭제할 권한이 없습니다."),
+    POST_CO_ASSIGNEE_DENIED(HttpStatus.FORBIDDEN, "P003", "공동 담당자는 선생님만 추가할 수 있습니다."),
+    INVALID_POST_CO_ASSIGNEE(HttpStatus.CONFLICT, "P004", "공동 담당자는 선생님 계정이어야 합니다."),
+    DUPLICATE_POST_CO_ASSIGNEE(HttpStatus.CONFLICT, "P005", "이미 이 신고의 담당자로 지정된 선생님입니다."),
 
     // Image
     INVALID_IMAGE(HttpStatus.BAD_REQUEST, "I001", "jpg, png, webp 형식의 이미지만 올릴 수 있습니다."),
