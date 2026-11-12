@@ -10,6 +10,7 @@ import com.example.showyourvoice.domain.post.controller.dto.PostSummaryResponse;
 import com.example.showyourvoice.domain.post.domain.Post;
 import com.example.showyourvoice.domain.post.domain.PostCoAssignee;
 import com.example.showyourvoice.domain.post.domain.PostCoAssigneeRepository;
+import com.example.showyourvoice.domain.post.domain.PostCreatedEvent;
 import com.example.showyourvoice.domain.post.domain.PostImage;
 import com.example.showyourvoice.domain.post.domain.PostImageRepository;
 import com.example.showyourvoice.domain.post.domain.PostRepository;
@@ -29,6 +30,7 @@ import com.example.showyourvoice.domain.user.exception.UserNotFoundException;
 import java.util.List;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +46,7 @@ public class PostService {
     private final AssignmentRuleRepository assignmentRuleRepository;
     private final UserRepository userRepository;
     private final ImageService imageService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public PostDetailResponse createPost(CreatePostRequest request, Long userId) {
@@ -62,6 +65,7 @@ public class PostService {
         List<PostImage> images = postImageRepository.saveAll(IntStream.range(0, imageUrls.size())
                 .mapToObj(i -> PostImage.builder().post(post).imageUrl(imageUrls.get(i)).sortOrder(i).build())
                 .toList());
+        eventPublisher.publishEvent(PostCreatedEvent.from(post));
         return PostDetailResponse.of(post, images);
     }
 
