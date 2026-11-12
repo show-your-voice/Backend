@@ -24,7 +24,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -32,6 +34,8 @@ import tools.jackson.databind.json.JsonMapper;
         properties = "spring.jpa.open-in-view=false")
 class PostHttpIntegrationTests {
 
+    // 담당 선생님이 있는 게시글을 실제로 커밋하므로, 실제 SMTP 서버로 알림 메일이 나가지 않게 막는다.
+    @MockitoBean private JavaMailSender mailSender;
     @Autowired private UserRepository userRepository;
     @Autowired private PlaceRepository placeRepository;
     @Autowired private RoomRepository roomRepository;
