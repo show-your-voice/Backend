@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RoomRepository extends JpaRepository<Room, Long> {
 
+    List<Room> findAllByPlaceIdOrderByIdAsc(Long placeId);
+
     @EntityGraph(attributePaths = "place")
     List<Room> findAllByNameContainingOrderByNameAscPlaceNameAscIdAsc(String keyword);
 

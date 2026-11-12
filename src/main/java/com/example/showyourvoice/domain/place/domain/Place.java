@@ -25,12 +25,20 @@ public class Place extends BaseTimeEntity {
     @Column(nullable = false, length = 50)
     private String name;
 
-    @Column(nullable = false, length = 500)
+    @Column(length = 500)
     private String imageUrl;
 
+    @Column(name = "grid_rows")
+    private Integer gridRows;
+
+    @Column(name = "grid_cols")
+    private Integer gridCols;
+
     @Builder
-    private Place(String name, String imageUrl) {
+    private Place(String name, String imageUrl, Integer gridRows, Integer gridCols) {
         this.name = name;
         this.imageUrl = imageUrl;
+        this.gridRows = gridRows;
+        this.gridCols = gridCols;
     }
 }
