@@ -23,6 +23,22 @@ spring:
       max-file-size: 5MB
       max-request-size: 6MB
 
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          # 기본값은 무제한 대기라, SMTP 서버가 응답하지 않으면 발송 스레드가 계속 묶인다.
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
 # 용량 초과 요청에도 연결을 끊지 않고 오류 응답을 돌려주도록 요청 본문을 끝까지 읽는다.
 server:
   tomcat:
@@ -30,3 +46,8 @@ server:
 
 image:
   upload-dir: ${IMAGE_UPLOAD_DIR:uploads}
+
+notification:
+  mail:
+    from: ${MAIL_USERNAME:noreply@localhost}
+    frontend-url: ${FRONTEND_URL:http://localhost:5173}
