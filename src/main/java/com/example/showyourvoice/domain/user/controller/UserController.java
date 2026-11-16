@@ -1,6 +1,6 @@
 package com.example.showyourvoice.domain.user.controller;
 
-import com.example.showyourvoice.domain.user.controller.dto.UserInfoResponse;
+import com.example.showyourvoice.domain.user.controller.dto.UserNameResponse;
 import com.example.showyourvoice.domain.user.service.UserService;
 import com.example.showyourvoice.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/me")
-    public ResponseEntity<UserInfoResponse> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(userService.getUserInfo(userDetails.getUserId()));
+    public ResponseEntity<UserNameResponse> getMyName(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(userService.getUserName(userDetails.getUserId()));
     }
 }
