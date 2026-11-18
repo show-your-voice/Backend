@@ -75,6 +75,12 @@ public class PostService {
                 .toList();
     }
 
+    public List<PostSummaryResponse> getAssignedPosts(Long teacherId, PostStatus status) {
+        return postRepository.findAssignedTo(teacherId, status).stream()
+                .map(PostSummaryResponse::from)
+                .toList();
+    }
+
     public PostDetailResponse getPost(Long postId) {
         Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
         return detailResponse(post);

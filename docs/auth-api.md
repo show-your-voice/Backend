@@ -17,6 +17,7 @@
 | POST | `/api/auth/login` | 불필요 | 로그인 |
 | POST | `/api/auth/logout` | 필요 | 로그아웃 |
 | GET | `/api/users/me` | 필요 | 내 이름 |
+| GET | `/api/users/me/session` | 필요 | 내 이름과 세션 역할 |
 
 ### 아이디 사용 가능 여부
 
@@ -63,6 +64,17 @@
 
 ```json
 { "name": "김학생" }
+```
+
+### 현재 세션
+
+`GET /api/users/me/session` → `200`
+
+로그인한 사용자의 이름과 현재 세션의 역할(`USER` 또는 `TEACHER`)을 돌려준다.
+로그인하지 않으면 `401 A001`이다.
+
+```json
+{ "name": "이선생", "role": "TEACHER" }
 ```
 
 ## 오류
