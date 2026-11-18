@@ -23,6 +23,21 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             """)
     List<Post> findAllByFilter(@Param("placeId") Long placeId, @Param("status") PostStatus status);
 
+    @Query("""
+            select p from Post p
+            join fetch p.author
+            join fetch p.room r
+            join fetch r.place
+            left join p.assignee assignee
+            where (:status is null or p.status = :status)
+              and (assignee.id = :teacherId or exists (
+                  select 1 from PostCoAssignee assignment
+                  where assignment.post = p and assignment.manager.id = :teacherId
+              ))
+            order by p.createdAt desc, p.id desc
+            """)
+    List<Post> findAssignedTo(@Param("teacherId") Long teacherId, @Param("status") PostStatus status);
+
     @Override
     @EntityGraph(attributePaths = {"room.place", "author", "assignee"})
     Optional<Post> findById(Long id);

@@ -42,6 +42,13 @@ public class PostController {
         return ResponseEntity.ok(postService.getPosts(placeId, status));
     }
 
+    @GetMapping("/assigned")
+    public ResponseEntity<List<PostSummaryResponse>> getAssignedPosts(
+            @RequestParam(required = false) PostStatus status,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(postService.getAssignedPosts(userDetails.getUserId(), status));
+    }
+
     @GetMapping("/{postId}")
     public ResponseEntity<PostDetailResponse> getPost(@PathVariable Long postId) {
         return ResponseEntity.ok(postService.getPost(postId));

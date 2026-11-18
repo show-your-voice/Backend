@@ -1,6 +1,7 @@
 package com.example.showyourvoice.domain.user.controller;
 
 import com.example.showyourvoice.domain.user.controller.dto.UserNameResponse;
+import com.example.showyourvoice.domain.user.controller.dto.UserSessionResponse;
 import com.example.showyourvoice.domain.user.service.UserService;
 import com.example.showyourvoice.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -20,5 +21,11 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<UserNameResponse> getMyName(@AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(userService.getUserName(userDetails.getUserId()));
+    }
+
+    @GetMapping("/me/session")
+    public ResponseEntity<UserSessionResponse> getMySession(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        UserNameResponse name = userService.getUserName(userDetails.getUserId());
+        return ResponseEntity.ok(new UserSessionResponse(name.name(), userDetails.getRole()));
     }
 }
