@@ -5,6 +5,7 @@ import com.example.showyourvoice.domain.place.domain.AssignmentRuleRepository;
 import com.example.showyourvoice.domain.post.domain.PostCategory;
 import com.example.showyourvoice.domain.user.controller.dto.ManagerInfoResponse;
 import com.example.showyourvoice.domain.user.controller.dto.UserInfoResponse;
+import com.example.showyourvoice.domain.user.controller.dto.UserNameResponse;
 import com.example.showyourvoice.domain.user.domain.Role;
 import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.domain.user.domain.UserRepository;
@@ -32,6 +33,12 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
         return UserInfoResponse.from(user);
+    }
+
+    public UserNameResponse getUserName(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+        return UserNameResponse.from(user);
     }
 
     public Optional<User> findByLoginId(String loginId) {

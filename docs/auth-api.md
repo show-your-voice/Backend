@@ -16,7 +16,7 @@
 | POST | `/api/auth/signup` | 불필요 | 회원가입 (역할은 항상 `USER`) |
 | POST | `/api/auth/login` | 불필요 | 로그인 |
 | POST | `/api/auth/logout` | 필요 | 로그아웃 |
-| GET | `/api/users/me` | 필요 | 내 정보 |
+| GET | `/api/users/me` | 필요 | 내 이름 |
 
 ### 아이디 사용 가능 여부
 
@@ -49,10 +49,20 @@
 
 ### 사용자 정보 응답
 
-회원가입·로그인·내 정보가 같은 형식을 쓴다.
+회원가입·로그인이 같은 형식을 쓴다.
 
 ```json
 { "id": 10, "loginId": "student01", "email": "student01@dsm.hs.kr", "name": "김학생", "role": "USER" }
+```
+
+### 내 이름
+
+`GET /api/users/me` → `200`
+
+로그인한 사용자의 이름만 돌려준다. 로그인하지 않으면 `401 A001`이다.
+
+```json
+{ "name": "김학생" }
 ```
 
 ## 오류
