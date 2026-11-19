@@ -19,6 +19,7 @@ import com.example.showyourvoice.domain.post.exception.DuplicatePostCoAssigneeEx
 import com.example.showyourvoice.domain.post.exception.PostCoAssigneeDeniedException;
 import com.example.showyourvoice.domain.post.exception.PostDeleteDeniedException;
 import com.example.showyourvoice.domain.post.exception.PostNotFoundException;
+import com.example.showyourvoice.domain.post.exception.PostStatusChangeDeniedException;
 import com.example.showyourvoice.domain.room.domain.Room;
 import com.example.showyourvoice.domain.room.domain.RoomRepository;
 import com.example.showyourvoice.domain.room.exception.RoomNotFoundException;
@@ -27,6 +28,8 @@ import com.example.showyourvoice.domain.user.domain.Role;
 import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.domain.user.domain.UserRepository;
 import com.example.showyourvoice.domain.user.exception.UserNotFoundException;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -66,7 +69,7 @@ public class PostService {
                 .mapToObj(i -> PostImage.builder().post(post).imageUrl(imageUrls.get(i)).sortOrder(i).build())
                 .toList());
         eventPublisher.publishEvent(PostCreatedEvent.from(post));
-        return PostDetailResponse.of(post, images);
+        return PostDetailResponse.of(post, images, List.of(), author.getRole() == Role.TEACHER);
     }
 
     public List<PostSummaryResponse> getPosts(Long placeId, PostStatus status) {
@@ -81,13 +84,28 @@ public class PostService {
                 .toList();
     }
 
-    public PostDetailResponse getPost(Long postId) {
+    public PostDetailResponse getPost(Long postId, Long userId, Role role) {
         Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
-        return detailResponse(post);
+        return detailResponse(post, userId, role);
     }
 
     @Transactional
-    public PostDetailResponse addCoAssignee(Long postId, Long managerId, Role role) {
+    public PostDetailResponse changeStatus(Long postId, PostStatus status, Long userId, Role role) {
+        if (role != Role.TEACHER) {
+            throw new PostStatusChangeDeniedException();
+        }
+        Post post = postRepository.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new);
+        List<UserInfoResponse> coAssignees = findCoAssignees(postId);
+        if (!canChangeStatus(post, userId, role, coAssignees)) {
+            throw new PostStatusChangeDeniedException();
+        }
+
+        post.changeStatus(status, LocalDateTime.now().truncatedTo(ChronoUnit.MICROS));
+        return detailResponse(post, coAssignees, true);
+    }
+
+    @Transactional
+    public PostDetailResponse addCoAssignee(Long postId, Long managerId, Long userId, Role role) {
         if (role != Role.TEACHER) {
             throw new PostCoAssigneeDeniedException();
         }
@@ -101,14 +119,29 @@ public class PostService {
         }
 
         postCoAssigneeRepository.save(assignment);
-        return detailResponse(post);
+        return detailResponse(post, userId, role);
     }
 
-    private PostDetailResponse detailResponse(Post post) {
-        List<UserInfoResponse> coAssignees = postCoAssigneeRepository.findAllByPostIdOrderByIdAsc(post.getId()).stream()
+    private PostDetailResponse detailResponse(Post post, Long userId, Role role) {
+        List<UserInfoResponse> coAssignees = findCoAssignees(post.getId());
+        return detailResponse(post, coAssignees, canChangeStatus(post, userId, role, coAssignees));
+    }
+
+    private PostDetailResponse detailResponse(Post post, List<UserInfoResponse> coAssignees, boolean canChangeStatus) {
+        return PostDetailResponse.of(post, postImageRepository.findAllByPostIdOrderBySortOrderAsc(post.getId()),
+                coAssignees, canChangeStatus);
+    }
+
+    private List<UserInfoResponse> findCoAssignees(Long postId) {
+        return postCoAssigneeRepository.findAllByPostIdOrderByIdAsc(postId).stream()
                 .map(assignment -> UserInfoResponse.from(assignment.getManager()))
                 .toList();
-        return PostDetailResponse.of(post, postImageRepository.findAllByPostIdOrderBySortOrderAsc(post.getId()), coAssignees);
+    }
+
+    private boolean canChangeStatus(Post post, Long userId, Role role, List<UserInfoResponse> coAssignees) {
+        return role == Role.TEACHER && (post.getAuthor().getId().equals(userId)
+                || (post.getAssignee() != null && post.getAssignee().getId().equals(userId))
+                || coAssignees.stream().anyMatch(assignee -> assignee.id().equals(userId)));
     }
 
     @Transactional

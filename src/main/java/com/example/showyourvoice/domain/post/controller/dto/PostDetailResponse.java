@@ -25,17 +25,15 @@ public record PostDetailResponse(
         UserInfoResponse assignee,
         List<UserInfoResponse> coAssignees,
         StatusInfo status,
+        boolean canChangeStatus,
         List<String> imageUrls,
         LocalDateTime receivedAt,
         LocalDateTime inProgressAt,
         LocalDateTime resolvedAt
 ) {
 
-    public static PostDetailResponse of(Post post, List<PostImage> images) {
-        return of(post, images, List.of());
-    }
-
-    public static PostDetailResponse of(Post post, List<PostImage> images, List<UserInfoResponse> coAssignees) {
+    public static PostDetailResponse of(Post post, List<PostImage> images, List<UserInfoResponse> coAssignees,
+                                        boolean canChangeStatus) {
         return new PostDetailResponse(
                 post.getId(), post.getTitle(), post.getContent(), post.getImprovement(),
                 new CategoryInfo(post.getCategory(), post.getCategory().getLabel()),
@@ -45,6 +43,7 @@ public record PostDetailResponse(
                 post.getAssignee() == null ? null : UserInfoResponse.from(post.getAssignee()),
                 List.copyOf(coAssignees),
                 new StatusInfo(post.getStatus(), post.getStatus().getLabel()),
+                canChangeStatus,
                 images.stream().map(PostImage::getImageUrl).toList(),
                 post.getCreatedAt(), post.getInProgressAt(), post.getResolvedAt());
     }
