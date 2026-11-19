@@ -90,6 +90,25 @@ public class Post extends BaseTimeEntity {
         this.status = PostStatus.UNRESOLVED;
     }
 
+    public void changeStatus(PostStatus newStatus, LocalDateTime changedAt) {
+        if (status == newStatus) {
+            return;
+        }
+
+        status = newStatus;
+        switch (newStatus) {
+            case UNRESOLVED -> {
+                inProgressAt = null;
+                resolvedAt = null;
+            }
+            case IN_PROGRESS -> {
+                inProgressAt = changedAt;
+                resolvedAt = null;
+            }
+            case RESOLVED -> resolvedAt = changedAt;
+        }
+    }
+
     public boolean isDeletableBy(Long userId, Role role) {
         return role == Role.TEACHER || author.getId().equals(userId);
     }

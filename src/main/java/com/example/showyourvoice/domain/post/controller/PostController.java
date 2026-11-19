@@ -1,6 +1,7 @@
 package com.example.showyourvoice.domain.post.controller;
 
 import com.example.showyourvoice.domain.post.controller.dto.AddPostCoAssigneeRequest;
+import com.example.showyourvoice.domain.post.controller.dto.ChangePostStatusRequest;
 import com.example.showyourvoice.domain.post.controller.dto.CreatePostRequest;
 import com.example.showyourvoice.domain.post.controller.dto.PostDetailResponse;
 import com.example.showyourvoice.domain.post.controller.dto.PostSummaryResponse;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -50,8 +52,17 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public ResponseEntity<PostDetailResponse> getPost(@PathVariable Long postId) {
-        return ResponseEntity.ok(postService.getPost(postId));
+    public ResponseEntity<PostDetailResponse> getPost(@PathVariable Long postId,
+                                                      @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(postService.getPost(postId, userDetails.getUserId(), userDetails.getRole()));
+    }
+
+    @PatchMapping("/{postId}/status")
+    public ResponseEntity<PostDetailResponse> changeStatus(@PathVariable Long postId,
+                                                           @Valid @RequestBody ChangePostStatusRequest request,
+                                                           @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(postService.changeStatus(
+                postId, request.status(), userDetails.getUserId(), userDetails.getRole()));
     }
 
     @DeleteMapping("/{postId}")
@@ -65,6 +76,7 @@ public class PostController {
     public ResponseEntity<PostDetailResponse> addCoAssignee(@PathVariable Long postId,
                                                            @Valid @RequestBody AddPostCoAssigneeRequest request,
                                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(postService.addCoAssignee(postId, request.managerId(), userDetails.getRole()));
+        return ResponseEntity.ok(postService.addCoAssignee(
+                postId, request.managerId(), userDetails.getUserId(), userDetails.getRole()));
     }
 }

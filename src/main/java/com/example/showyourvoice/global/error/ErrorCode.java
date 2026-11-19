@@ -33,6 +33,7 @@ public enum ErrorCode {
     POST_CO_ASSIGNEE_DENIED(HttpStatus.FORBIDDEN, "P003", "공동 담당자는 선생님만 추가할 수 있습니다."),
     INVALID_POST_CO_ASSIGNEE(HttpStatus.CONFLICT, "P004", "공동 담당자는 선생님 계정이어야 합니다."),
     DUPLICATE_POST_CO_ASSIGNEE(HttpStatus.CONFLICT, "P005", "이미 이 신고의 담당자로 지정된 선생님입니다."),
+    POST_STATUS_CHANGE_DENIED(HttpStatus.FORBIDDEN, "P006", "게시물의 처리 상태를 변경할 권한이 없습니다."),
 
     // Image
     INVALID_IMAGE(HttpStatus.BAD_REQUEST, "I001", "jpg, png, webp 형식의 이미지만 올릴 수 있습니다."),
