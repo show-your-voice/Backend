@@ -38,4 +38,8 @@ public class Room extends BaseTimeEntity {
         this.name = name;
         this.place = place;
     }
+
+    public void changeName(String name) {
+        this.name = name;
+    }
 }

@@ -41,7 +41,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/login-ids/*/availability").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/images/places").hasRole("TEACHER")
-                        .requestMatchers(HttpMethod.PATCH, "/api/places/*/floor-plan").hasRole("TEACHER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/rooms/*").hasRole("TEACHER")
                         .requestMatchers("/api/posts/assigned").hasRole("TEACHER")
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()

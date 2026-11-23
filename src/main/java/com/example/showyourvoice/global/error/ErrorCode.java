@@ -26,9 +26,6 @@ public enum ErrorCode {
 
     PLACE_NOT_FOUND(HttpStatus.NOT_FOUND, "L001", "장소를 찾을 수 없습니다."),
     INVALID_TEACHER_ASSIGNMENT(HttpStatus.CONFLICT, "L002", "실의 담당자는 선생님 계정이어야 합니다."),
-    INVALID_FLOOR_PLAN_LAYOUT(HttpStatus.CONFLICT, "L003", "현재 평면도에서는 선택한 실의 위치를 교환할 수 없습니다."),
-    FLOOR_PLAN_CHANGED(HttpStatus.CONFLICT, "L004", "실의 위치가 변경되었습니다. 평면도를 다시 조회해주세요."),
-    FLOOR_PLAN_SHAPE_MISMATCH(HttpStatus.CONFLICT, "L005", "같은 모양의 실끼리만 위치를 교환할 수 있습니다."),
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "R001", "실을 찾을 수 없습니다."),
 
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "게시물을 찾을 수 없습니다."),

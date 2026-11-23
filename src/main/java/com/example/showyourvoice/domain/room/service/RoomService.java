@@ -1,7 +1,10 @@
 package com.example.showyourvoice.domain.room.service;
 
 import com.example.showyourvoice.domain.room.controller.dto.RoomInfoResponse;
+import com.example.showyourvoice.domain.room.controller.dto.UpdateRoomNameRequest;
+import com.example.showyourvoice.domain.room.domain.Room;
 import com.example.showyourvoice.domain.room.domain.RoomRepository;
+import com.example.showyourvoice.domain.room.exception.RoomNotFoundException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,5 +21,12 @@ public class RoomService {
         return roomRepository.findAllByNameContainingOrderByNameAscPlaceNameAscIdAsc(keyword.strip()).stream()
                 .map(RoomInfoResponse::from)
                 .toList();
+    }
+
+    @Transactional
+    public RoomInfoResponse updateRoomName(Long roomId, UpdateRoomNameRequest request) {
+        Room room = roomRepository.findById(roomId).orElseThrow(RoomNotFoundException::new);
+        room.changeName(request.name().strip());
+        return RoomInfoResponse.from(room);
     }
 }
