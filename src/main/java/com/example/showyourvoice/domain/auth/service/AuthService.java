@@ -36,6 +36,7 @@ public class AuthService {
     private final UserService userService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationService emailVerificationService;
     private final SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
 
     public LoginIdAvailabilityResponse checkLoginIdAvailability(String loginId) {
@@ -50,6 +51,7 @@ public class AuthService {
         if (userRepository.existsByEmail(request.email())) {
             throw new DuplicateEmailException();
         }
+        emailVerificationService.consumeForSignUp(request.email());
 
         User user = User.createStudent(request.loginId(), request.email(), passwordEncoder.encode(request.password()), request.name());
         return UserInfoResponse.from(userRepository.save(user));
