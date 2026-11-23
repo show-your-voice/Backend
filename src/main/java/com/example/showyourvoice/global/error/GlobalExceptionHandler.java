@@ -17,6 +17,11 @@ import tools.jackson.core.JacksonException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(LimitedAttemptException.class)
+    public ResponseEntity<LimitedAttemptErrorResponse> handleLimitedAttemptException(LimitedAttemptException e) {
+        return ResponseEntity.status(e.getErrorCode().getStatus()).body(LimitedAttemptErrorResponse.of(e));
+    }
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
         ErrorCode errorCode = e.getErrorCode();

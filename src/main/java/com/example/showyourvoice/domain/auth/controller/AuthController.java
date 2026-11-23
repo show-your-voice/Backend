@@ -1,9 +1,13 @@
 package com.example.showyourvoice.domain.auth.controller;
 
+import com.example.showyourvoice.domain.auth.controller.dto.EmailVerificationSendResponse;
 import com.example.showyourvoice.domain.auth.controller.dto.LoginIdAvailabilityResponse;
 import com.example.showyourvoice.domain.auth.controller.dto.LoginRequest;
+import com.example.showyourvoice.domain.auth.controller.dto.SendEmailVerificationRequest;
 import com.example.showyourvoice.domain.auth.controller.dto.SignUpRequest;
+import com.example.showyourvoice.domain.auth.controller.dto.VerifyEmailRequest;
 import com.example.showyourvoice.domain.auth.service.AuthService;
+import com.example.showyourvoice.domain.auth.service.EmailVerificationService;
 import com.example.showyourvoice.domain.user.controller.dto.UserInfoResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,10 +28,23 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailVerificationService emailVerificationService;
 
     @GetMapping("/login-ids/{loginId}/availability")
     public ResponseEntity<LoginIdAvailabilityResponse> checkLoginIdAvailability(@PathVariable String loginId) {
         return ResponseEntity.ok(authService.checkLoginIdAvailability(loginId));
+    }
+
+    @PostMapping("/email-verifications")
+    public ResponseEntity<EmailVerificationSendResponse> sendEmailVerification(
+            @Valid @RequestBody SendEmailVerificationRequest request) {
+        return ResponseEntity.ok(emailVerificationService.sendCode(request.email()));
+    }
+
+    @PostMapping("/email-verifications/verify")
+    public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        emailVerificationService.verify(request.email(), request.code());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/signup")

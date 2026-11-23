@@ -24,6 +24,14 @@ public enum ErrorCode {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U002", "사용자를 찾을 수 없습니다."),
     DUPLICATE_LOGIN_ID(HttpStatus.CONFLICT, "U003", "이미 사용 중인 아이디입니다."),
 
+    // Email verification
+    EMAIL_VERIFICATION_NOT_FOUND(HttpStatus.BAD_REQUEST, "E001", "인증번호를 먼저 요청해 주세요."),
+    VERIFICATION_CODE_MISMATCH(HttpStatus.BAD_REQUEST, "E002", "인증번호가 일치하지 않습니다."),
+    VERIFICATION_CODE_EXPIRED(HttpStatus.BAD_REQUEST, "E003", "인증번호가 만료되었습니다. 인증번호를 다시 요청해 주세요."),
+    VERIFICATION_ATTEMPTS_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "E004", "입력 기회를 모두 사용했습니다. 인증번호를 다시 요청해 주세요."),
+    EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "E005", "이메일 인증이 필요합니다."),
+    VERIFICATION_MAIL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E006", "인증번호 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요."),
+
     PLACE_NOT_FOUND(HttpStatus.NOT_FOUND, "L001", "장소를 찾을 수 없습니다."),
     INVALID_TEACHER_ASSIGNMENT(HttpStatus.CONFLICT, "L002", "실의 담당자는 선생님 계정이어야 합니다."),
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "R001", "실을 찾을 수 없습니다."),

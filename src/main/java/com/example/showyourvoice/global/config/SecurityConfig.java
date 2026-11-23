@@ -38,7 +38,8 @@ public class SecurityConfig {
                 .logout(AbstractHttpConfigurer::disable)
                 .securityContext(context -> context.securityContextRepository(securityContextRepository()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login",
+                                "/api/auth/email-verifications", "/api/auth/email-verifications/verify").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/login-ids/*/availability").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/images/places").hasRole("TEACHER")
                         .requestMatchers(HttpMethod.PATCH, "/api/rooms/*").hasRole("TEACHER")

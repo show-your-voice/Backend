@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -33,6 +34,7 @@ class AuthLoginIdIntegrationTests {
     @Autowired private JsonMapper jsonMapper;
     @Autowired private UserRepository userRepository;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private JdbcTemplate jdbc;
 
     private User student;
 
@@ -61,6 +63,7 @@ class AuthLoginIdIntegrationTests {
     @Test
     void signsUpWithLoginId() throws Exception {
         String loginId = "new" + UUID.randomUUID().toString().substring(0, 8);
+        markEmailVerified(loginId + "@dsm.hs.kr");
         mvc.perform(json(post("/api/auth/signup"), signUp(loginId, loginId + "@dsm.hs.kr")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.loginId").value(loginId))
@@ -92,6 +95,13 @@ class AuthLoginIdIntegrationTests {
         mvc.perform(get("/api/auth/login-ids/{loginId}/availability", "free" + UUID.randomUUID().toString().substring(0, 8)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.available").value(true));
+    }
+
+    private void markEmailVerified(String email) {
+        jdbc.update("""
+                INSERT INTO tbl_email_verification (email, code, expires_at, remaining_attempts, verified_at, created_at, updated_at)
+                VALUES (?, '123456', CURRENT_TIMESTAMP(6), 5, CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6))
+                """, email);
     }
 
     private Map<String, Object> signUp(String loginId, String email) {
