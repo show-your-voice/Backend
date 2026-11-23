@@ -11,6 +11,7 @@ import com.example.showyourvoice.domain.room.domain.Room;
 import com.example.showyourvoice.domain.room.domain.RoomCell;
 import com.example.showyourvoice.domain.room.domain.RoomCellRepository;
 import com.example.showyourvoice.domain.room.domain.RoomRepository;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
