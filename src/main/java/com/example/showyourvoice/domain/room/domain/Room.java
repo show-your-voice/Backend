@@ -29,13 +29,17 @@ public class Room extends BaseTimeEntity {
     @Column(nullable = false, length = 50)
     private String name;
 
+    @Column(name = "roadview_image_url", length = 500)
+    private String roadviewImageUrl;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "place_id", nullable = false)
     private Place place;
 
     @Builder
-    private Room(String name, Place place) {
+    private Room(String name, String roadviewImageUrl, Place place) {
         this.name = name;
+        this.roadviewImageUrl = roadviewImageUrl;
         this.place = place;
     }
 

@@ -1,6 +1,7 @@
 package com.example.showyourvoice.domain.room.controller;
 
 import com.example.showyourvoice.domain.room.controller.dto.RoomInfoResponse;
+import com.example.showyourvoice.domain.room.controller.dto.RoomRoadviewResponse;
 import com.example.showyourvoice.domain.room.controller.dto.UpdateRoomNameRequest;
 import com.example.showyourvoice.domain.room.service.RoomService;
 import jakarta.validation.Valid;
@@ -25,6 +26,11 @@ public class RoomController {
     @GetMapping
     public ResponseEntity<List<RoomInfoResponse>> getRooms(@RequestParam(defaultValue = "") String keyword) {
         return ResponseEntity.ok(roomService.getRooms(keyword));
+    }
+
+    @GetMapping("/{roomId}/roadview")
+    public ResponseEntity<RoomRoadviewResponse> getRoomRoadview(@PathVariable Long roomId) {
+        return ResponseEntity.ok(roomService.getRoomRoadview(roomId));
     }
 
     @PatchMapping("/{roomId}")

@@ -1,6 +1,7 @@
 package com.example.showyourvoice.domain.room.service;
 
 import com.example.showyourvoice.domain.room.controller.dto.RoomInfoResponse;
+import com.example.showyourvoice.domain.room.controller.dto.RoomRoadviewResponse;
 import com.example.showyourvoice.domain.room.controller.dto.UpdateRoomNameRequest;
 import com.example.showyourvoice.domain.room.domain.Room;
 import com.example.showyourvoice.domain.room.domain.RoomRepository;
@@ -21,6 +22,11 @@ public class RoomService {
         return roomRepository.findAllByNameContainingOrderByNameAscPlaceNameAscIdAsc(keyword.strip()).stream()
                 .map(RoomInfoResponse::from)
                 .toList();
+    }
+
+    public RoomRoadviewResponse getRoomRoadview(Long roomId) {
+        Room room = roomRepository.findById(roomId).orElseThrow(RoomNotFoundException::new);
+        return RoomRoadviewResponse.from(room);
     }
 
     @Transactional
