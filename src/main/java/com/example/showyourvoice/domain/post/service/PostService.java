@@ -5,6 +5,7 @@ import com.example.showyourvoice.domain.image.service.ImageService;
 import com.example.showyourvoice.domain.place.domain.AssignmentRule;
 import com.example.showyourvoice.domain.place.domain.AssignmentRuleRepository;
 import com.example.showyourvoice.domain.post.controller.dto.PostDetailResponse;
+import com.example.showyourvoice.domain.post.controller.dto.PostPageResponse;
 import com.example.showyourvoice.domain.post.controller.dto.PostSummaryResponse;
 import com.example.showyourvoice.domain.post.controller.dto.SavePostRequest;
 import com.example.showyourvoice.domain.post.domain.Post;
@@ -36,6 +37,8 @@ import java.util.List;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -116,10 +119,10 @@ public class PostService {
                 .toList());
     }
 
-    public List<PostSummaryResponse> getPosts(Long placeId, PostStatus status) {
-        return postRepository.findAllByFilter(placeId, status).stream()
-                .map(PostSummaryResponse::from)
-                .toList();
+    public PostPageResponse getPosts(Long placeId, PostStatus status, Pageable pageable) {
+        // 정렬은 최신순으로 고정하고, 요청의 sort 값은 쓰지 않는다.
+        Pageable page = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        return PostPageResponse.from(postRepository.findAllByFilter(placeId, status, page));
     }
 
     public List<PostSummaryResponse> getAssignedPosts(Long teacherId, PostStatus status) {

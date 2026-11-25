@@ -3,6 +3,8 @@ package com.example.showyourvoice.domain.post.domain;
 import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -12,16 +14,21 @@ import org.springframework.data.repository.query.Param;
 public interface PostRepository extends JpaRepository<Post, Long> {
 
     // 필터 값이 null이면 해당 조건은 적용하지 않는다.
-    @Query("""
+    @Query(value = """
             select p from Post p
             join fetch p.author
             join fetch p.room r
             join fetch r.place
             where (:placeId is null or r.place.id = :placeId)
               and (:status is null or p.status = :status)
-            order by p.createdAt desc
+            order by p.createdAt desc, p.id desc
+            """,
+            countQuery = """
+            select count(p) from Post p
+            where (:placeId is null or p.room.place.id = :placeId)
+              and (:status is null or p.status = :status)
             """)
-    List<Post> findAllByFilter(@Param("placeId") Long placeId, @Param("status") PostStatus status);
+    Page<Post> findAllByFilter(@Param("placeId") Long placeId, @Param("status") PostStatus status, Pageable pageable);
 
     @Query("""
             select p from Post p
