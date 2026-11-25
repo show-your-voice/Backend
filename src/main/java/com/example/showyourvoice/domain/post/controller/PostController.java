@@ -3,6 +3,7 @@ package com.example.showyourvoice.domain.post.controller;
 import com.example.showyourvoice.domain.post.controller.dto.AddPostCoAssigneeRequest;
 import com.example.showyourvoice.domain.post.controller.dto.ChangePostStatusRequest;
 import com.example.showyourvoice.domain.post.controller.dto.PostDetailResponse;
+import com.example.showyourvoice.domain.post.controller.dto.PostPageResponse;
 import com.example.showyourvoice.domain.post.controller.dto.PostSummaryResponse;
 import com.example.showyourvoice.domain.post.controller.dto.SavePostRequest;
 import com.example.showyourvoice.domain.post.domain.PostStatus;
@@ -12,6 +13,8 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -47,9 +50,10 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PostSummaryResponse>> getPosts(@RequestParam(required = false) Long placeId,
-                                                              @RequestParam(required = false) PostStatus status) {
-        return ResponseEntity.ok(postService.getPosts(placeId, status));
+    public ResponseEntity<PostPageResponse> getPosts(@RequestParam(required = false) Long placeId,
+                                                     @RequestParam(required = false) PostStatus status,
+                                                     @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(postService.getPosts(placeId, status, pageable));
     }
 
     @GetMapping("/assigned")
