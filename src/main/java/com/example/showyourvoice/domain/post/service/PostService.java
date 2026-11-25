@@ -69,7 +69,7 @@ public class PostService {
                 .mapToObj(i -> PostImage.builder().post(post).imageUrl(imageUrls.get(i)).sortOrder(i).build())
                 .toList());
         eventPublisher.publishEvent(PostCreatedEvent.from(post));
-        return PostDetailResponse.of(post, images, List.of(), author.getRole() == Role.TEACHER);
+        return PostDetailResponse.of(post, images, List.of(), userId, author.getRole() == Role.TEACHER);
     }
 
     public List<PostSummaryResponse> getPosts(Long placeId, PostStatus status) {
@@ -101,7 +101,7 @@ public class PostService {
         }
 
         post.changeStatus(status, LocalDateTime.now().truncatedTo(ChronoUnit.MICROS));
-        return detailResponse(post, coAssignees, true);
+        return detailResponse(post, userId, coAssignees, true);
     }
 
     @Transactional
@@ -124,12 +124,13 @@ public class PostService {
 
     private PostDetailResponse detailResponse(Post post, Long userId, Role role) {
         List<UserInfoResponse> coAssignees = findCoAssignees(post.getId());
-        return detailResponse(post, coAssignees, canChangeStatus(post, userId, role, coAssignees));
+        return detailResponse(post, userId, coAssignees, canChangeStatus(post, userId, role, coAssignees));
     }
 
-    private PostDetailResponse detailResponse(Post post, List<UserInfoResponse> coAssignees, boolean canChangeStatus) {
+    private PostDetailResponse detailResponse(Post post, Long userId, List<UserInfoResponse> coAssignees,
+                                              boolean canChangeStatus) {
         return PostDetailResponse.of(post, postImageRepository.findAllByPostIdOrderBySortOrderAsc(post.getId()),
-                coAssignees, canChangeStatus);
+                coAssignees, userId, canChangeStatus);
     }
 
     private List<UserInfoResponse> findCoAssignees(Long postId) {

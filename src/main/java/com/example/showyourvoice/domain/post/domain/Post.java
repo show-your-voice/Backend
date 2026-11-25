@@ -109,6 +109,10 @@ public class Post extends BaseTimeEntity {
         }
     }
 
+    public boolean isEditableBy(Long userId) {
+        return author.getId().equals(userId);
+    }
+
     public boolean isDeletableBy(Long userId, Role role) {
         return role == Role.TEACHER || author.getId().equals(userId);
     }
