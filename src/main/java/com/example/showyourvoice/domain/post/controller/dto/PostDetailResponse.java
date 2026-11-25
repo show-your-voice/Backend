@@ -26,6 +26,7 @@ public record PostDetailResponse(
         List<UserInfoResponse> coAssignees,
         StatusInfo status,
         boolean canChangeStatus,
+        boolean canEdit,
         List<String> imageUrls,
         LocalDateTime receivedAt,
         LocalDateTime inProgressAt,
@@ -33,7 +34,7 @@ public record PostDetailResponse(
 ) {
 
     public static PostDetailResponse of(Post post, List<PostImage> images, List<UserInfoResponse> coAssignees,
-                                        boolean canChangeStatus) {
+                                        Long viewerId, boolean canChangeStatus) {
         return new PostDetailResponse(
                 post.getId(), post.getTitle(), post.getContent(), post.getImprovement(),
                 new CategoryInfo(post.getCategory(), post.getCategory().getLabel()),
@@ -43,7 +44,7 @@ public record PostDetailResponse(
                 post.getAssignee() == null ? null : UserInfoResponse.from(post.getAssignee()),
                 List.copyOf(coAssignees),
                 new StatusInfo(post.getStatus(), post.getStatus().getLabel()),
-                canChangeStatus,
+                canChangeStatus, post.isEditableBy(viewerId),
                 images.stream().map(PostImage::getImageUrl).toList(),
                 post.getCreatedAt(), post.getInProgressAt(), post.getResolvedAt());
     }

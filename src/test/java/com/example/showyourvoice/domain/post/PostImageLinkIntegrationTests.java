@@ -51,6 +51,29 @@ class PostImageLinkIntegrationTests extends PostApiTestSupport {
     }
 
     @Test
+    void replacesImagesInOrderAndAllowsClearingAllAttachments() throws Exception {
+        String removed = uploadedImage("posts", "png");
+        String retained = uploadedImage("posts", "jpg");
+        String added = uploadedImage("posts", "webp");
+        long id = responseId(mvc.perform(createRequest(Map.of("imageUrls", List.of(removed, retained))))
+                .andExpect(status().isCreated()).andReturn());
+        Files.delete(uploadDir.resolve("posts").resolve(Path.of(retained).getFileName()));
+
+        mvc.perform(updateRequest(id, Map.of("imageUrls", List.of(added, retained)))
+                        .with(user(CustomUserDetails.from(author))))
+                .andExpect(status().isOk());
+        entityManager.flush();
+        entityManager.clear();
+        mvc.perform(get("/api/posts/{id}", id).with(user(CustomUserDetails.from(author))))
+                .andExpect(jsonPath("$.imageUrls.length()").value(2))
+                .andExpect(jsonPath("$.imageUrls[0]").value(added)).andExpect(jsonPath("$.imageUrls[1]").value(retained));
+        mvc.perform(updateRequest(id, Map.of("imageUrls", List.of())).with(user(CustomUserDetails.from(author))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.imageUrls").isEmpty());
+        entityManager.flush();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tbl_post_image WHERE post_id = ?", Integer.class, id)).isZero();
+    }
+
+    @Test
     void createsPostWithoutImagesWhenImageUrlsAreAbsent() throws Exception {
         mvc.perform(createRequest(Collections.singletonMap("imageUrls", null)))
                 .andExpect(status().isCreated())

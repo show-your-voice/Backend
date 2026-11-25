@@ -4,10 +4,11 @@ import com.example.showyourvoice.domain.image.domain.ImagePurpose;
 import com.example.showyourvoice.domain.image.service.ImageService;
 import com.example.showyourvoice.domain.place.domain.AssignmentRule;
 import com.example.showyourvoice.domain.place.domain.AssignmentRuleRepository;
-import com.example.showyourvoice.domain.post.controller.dto.CreatePostRequest;
 import com.example.showyourvoice.domain.post.controller.dto.PostDetailResponse;
 import com.example.showyourvoice.domain.post.controller.dto.PostSummaryResponse;
+import com.example.showyourvoice.domain.post.controller.dto.SavePostRequest;
 import com.example.showyourvoice.domain.post.domain.Post;
+import com.example.showyourvoice.domain.post.domain.PostCategory;
 import com.example.showyourvoice.domain.post.domain.PostCoAssignee;
 import com.example.showyourvoice.domain.post.domain.PostCoAssigneeRepository;
 import com.example.showyourvoice.domain.post.domain.PostCreatedEvent;
@@ -18,6 +19,7 @@ import com.example.showyourvoice.domain.post.domain.PostStatus;
 import com.example.showyourvoice.domain.post.exception.DuplicatePostCoAssigneeException;
 import com.example.showyourvoice.domain.post.exception.PostCoAssigneeDeniedException;
 import com.example.showyourvoice.domain.post.exception.PostDeleteDeniedException;
+import com.example.showyourvoice.domain.post.exception.PostEditDeniedException;
 import com.example.showyourvoice.domain.post.exception.PostNotFoundException;
 import com.example.showyourvoice.domain.post.exception.PostStatusChangeDeniedException;
 import com.example.showyourvoice.domain.room.domain.Room;
@@ -52,12 +54,10 @@ public class PostService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public PostDetailResponse createPost(CreatePostRequest request, Long userId) {
+    public PostDetailResponse createPost(SavePostRequest request, Long userId) {
         User author = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
         Room room = roomRepository.findById(request.roomId()).orElseThrow(RoomNotFoundException::new);
-        User assignee = assignmentRuleRepository.findFirstByRoomIdAndCategoryOrderByIdAsc(room.getId(), request.category())
-                .map(AssignmentRule::assignedTeacher)
-                .orElse(null);
+        User assignee = findAssignee(room.getId(), request.category());
         List<String> imageUrls = request.imageUrlsOrEmpty();
         imageUrls.forEach(imageUrl -> imageService.verifyUploaded(imageUrl, ImagePurpose.POST));
 
@@ -65,11 +65,55 @@ public class PostService {
                 .title(request.title()).content(request.content()).improvement(request.improvement())
                 .category(request.category()).room(room).posX(request.posX()).posY(request.posY())
                 .author(author).assignee(assignee).build());
-        List<PostImage> images = postImageRepository.saveAll(IntStream.range(0, imageUrls.size())
+        List<PostImage> images = saveImages(post, imageUrls);
+        eventPublisher.publishEvent(PostCreatedEvent.from(post));
+        return PostDetailResponse.of(post, images, List.of(), userId, author.getRole() == Role.TEACHER);
+    }
+
+    @Transactional
+    public PostDetailResponse updatePost(Long postId, SavePostRequest request, Long userId, Role role) {
+        Post post = postRepository.findByIdForUpdate(postId).orElseThrow(PostNotFoundException::new);
+        if (!post.isEditableBy(userId)) {
+            throw new PostEditDeniedException();
+        }
+
+        Room room = roomRepository.findById(request.roomId()).orElseThrow(RoomNotFoundException::new);
+        User assignee = post.getAssignee();
+        if (!post.getRoom().getId().equals(room.getId()) || post.getCategory() != request.category()) {
+            assignee = findAssignee(room.getId(), request.category());
+            if (assignee != null) {
+                postCoAssigneeRepository.deleteByPostIdAndManagerId(postId, assignee.getId());
+            }
+        }
+        post.revise(request.title(), request.content(), request.improvement(), request.category(),
+                room, request.posX(), request.posY(), assignee);
+        List<PostImage> images = replaceImages(post, request.imageUrlsOrEmpty());
+        return PostDetailResponse.of(post, images, findCoAssignees(postId), userId, role == Role.TEACHER);
+    }
+
+    private User findAssignee(Long roomId, PostCategory category) {
+        return assignmentRuleRepository.findFirstByRoomIdAndCategoryOrderByIdAsc(roomId, category)
+                .map(AssignmentRule::assignedTeacher)
+                .orElse(null);
+    }
+
+    private List<PostImage> replaceImages(Post post, List<String> imageUrls) {
+        List<PostImage> existing = postImageRepository.findAllByPostIdOrderBySortOrderAsc(post.getId());
+        List<String> existingUrls = existing.stream().map(PostImage::getImageUrl).toList();
+        if (existingUrls.equals(imageUrls)) {
+            return existing;
+        }
+
+        imageUrls.stream().filter(url -> !existingUrls.contains(url))
+                .forEach(url -> imageService.verifyUploaded(url, ImagePurpose.POST));
+        postImageRepository.deleteAll(existing);
+        return saveImages(post, imageUrls);
+    }
+
+    private List<PostImage> saveImages(Post post, List<String> imageUrls) {
+        return postImageRepository.saveAll(IntStream.range(0, imageUrls.size())
                 .mapToObj(i -> PostImage.builder().post(post).imageUrl(imageUrls.get(i)).sortOrder(i).build())
                 .toList());
-        eventPublisher.publishEvent(PostCreatedEvent.from(post));
-        return PostDetailResponse.of(post, images, List.of(), author.getRole() == Role.TEACHER);
     }
 
     public List<PostSummaryResponse> getPosts(Long placeId, PostStatus status) {
@@ -101,7 +145,7 @@ public class PostService {
         }
 
         post.changeStatus(status, LocalDateTime.now().truncatedTo(ChronoUnit.MICROS));
-        return detailResponse(post, coAssignees, true);
+        return detailResponse(post, userId, coAssignees, true);
     }
 
     @Transactional
@@ -124,12 +168,13 @@ public class PostService {
 
     private PostDetailResponse detailResponse(Post post, Long userId, Role role) {
         List<UserInfoResponse> coAssignees = findCoAssignees(post.getId());
-        return detailResponse(post, coAssignees, canChangeStatus(post, userId, role, coAssignees));
+        return detailResponse(post, userId, coAssignees, canChangeStatus(post, userId, role, coAssignees));
     }
 
-    private PostDetailResponse detailResponse(Post post, List<UserInfoResponse> coAssignees, boolean canChangeStatus) {
+    private PostDetailResponse detailResponse(Post post, Long userId, List<UserInfoResponse> coAssignees,
+                                              boolean canChangeStatus) {
         return PostDetailResponse.of(post, postImageRepository.findAllByPostIdOrderBySortOrderAsc(post.getId()),
-                coAssignees, canChangeStatus);
+                coAssignees, userId, canChangeStatus);
     }
 
     private List<UserInfoResponse> findCoAssignees(Long postId) {

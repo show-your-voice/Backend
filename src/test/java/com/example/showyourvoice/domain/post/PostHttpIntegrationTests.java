@@ -15,6 +15,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -161,6 +163,39 @@ class PostHttpIntegrationTests {
         Map<String, Object> stored = jdbc.queryForMap("SELECT improvement, assignee_id FROM tbl_post WHERE id = ?",
                 created.get("id").asLong());
         assertThat(stored).containsEntry("improvement", null).containsEntry("assignee_id", null);
+    }
+
+    @Test
+    void invalidEditRollsBackContentAssignmentAndAttachmentChanges() throws Exception {
+        Map<String, Object> body = new HashMap<>(Map.of("title", "원래 제목", "content", "접수 내용", "category", "FACILITY",
+                "roomId", room.getId(), "posX", 0.1, "posY", 0.2));
+        HttpResponse<String> created = post("/api/posts", body);
+        assertThat(created.statusCode()).isEqualTo(201);
+        long id = jsonMapper.readTree(created.body()).get("id").asLong();
+        String path = "/api/posts/" + id;
+        String originalImage = "/images/posts/" + UUID.randomUUID() + ".jpg";
+        jdbc.update("INSERT INTO tbl_post_image (post_id, image_url, sort_order) VALUES (?, ?, 0)", id, originalImage);
+        try {
+            body.put("title", "수정한 제목");
+            body.put("category", "NETWORK");
+            body.put("imageUrls", List.of("/images/posts/missing.jpg"));
+            HttpResponse<String> rejected = client.send(request(path).header("Content-Type", "application/json")
+                            .PUT(HttpRequest.BodyPublishers.ofString(jsonMapper.writeValueAsString(body))).build(),
+                    HttpResponse.BodyHandlers.ofString());
+            assertThat(rejected.statusCode()).isEqualTo(400);
+            assertThat(jsonMapper.readTree(rejected.body()).at("/errors/0/field").asString()).isEqualTo("imageUrls");
+
+            HttpResponse<String> response = client.send(request(path).GET().build(), HttpResponse.BodyHandlers.ofString());
+            assertThat(response.statusCode()).isEqualTo(200);
+            JsonNode detail = jsonMapper.readTree(response.body());
+            assertThat(detail.path("title").asString()).isEqualTo("원래 제목");
+            assertThat(detail.at("/category/code").asString()).isEqualTo("FACILITY");
+            assertThat(detail.at("/assignee/id").asLong()).isEqualTo(teacher.getId());
+            assertThat(detail.get("imageUrls").size()).isOne();
+            assertThat(detail.at("/imageUrls/0").asString()).isEqualTo(originalImage);
+        } finally {
+            jdbc.update("DELETE FROM tbl_post_image WHERE post_id = ?", id);
+        }
     }
 
     private HttpResponse<String> post(String path, Map<String, Object> body) throws Exception {

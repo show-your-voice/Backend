@@ -78,6 +78,13 @@ public class Post extends BaseTimeEntity {
     @Builder
     private Post(String title, String content, String improvement, PostCategory category,
                  Room room, BigDecimal posX, BigDecimal posY, User author, User assignee) {
+        revise(title, content, improvement, category, room, posX, posY, assignee);
+        this.author = author;
+        this.status = PostStatus.UNRESOLVED;
+    }
+
+    public void revise(String title, String content, String improvement, PostCategory category,
+                       Room room, BigDecimal posX, BigDecimal posY, User assignee) {
         this.title = title.strip();
         this.content = content.strip();
         this.improvement = improvement == null || improvement.isBlank() ? null : improvement.strip();
@@ -85,9 +92,7 @@ public class Post extends BaseTimeEntity {
         this.room = room;
         this.posX = posX;
         this.posY = posY;
-        this.author = author;
         this.assignee = assignee;
-        this.status = PostStatus.UNRESOLVED;
     }
 
     public void changeStatus(PostStatus newStatus, LocalDateTime changedAt) {
@@ -107,6 +112,10 @@ public class Post extends BaseTimeEntity {
             }
             case RESOLVED -> resolvedAt = changedAt;
         }
+    }
+
+    public boolean isEditableBy(Long userId) {
+        return author.getId().equals(userId);
     }
 
     public boolean isDeletableBy(Long userId, Role role) {

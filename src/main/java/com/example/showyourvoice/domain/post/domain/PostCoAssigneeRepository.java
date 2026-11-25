@@ -11,5 +11,7 @@ public interface PostCoAssigneeRepository extends JpaRepository<PostCoAssignee, 
 
     boolean existsByPostIdAndManagerId(Long postId, Long managerId);
 
+    void deleteByPostIdAndManagerId(Long postId, Long managerId);
+
     void deleteAllByPostId(Long postId);
 }

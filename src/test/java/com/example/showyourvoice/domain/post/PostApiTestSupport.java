@@ -2,6 +2,7 @@ package com.example.showyourvoice.domain.post;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import com.example.showyourvoice.domain.place.domain.Place;
 import com.example.showyourvoice.domain.place.domain.PlaceRepository;
@@ -77,6 +78,15 @@ abstract class PostApiTestSupport {
     }
 
     protected MockHttpServletRequestBuilder createRequest(Map<String, Object> overrides) {
+        return post("/api/posts").with(user(CustomUserDetails.from(author)))
+                .contentType(MediaType.APPLICATION_JSON).content(postBody(overrides));
+    }
+
+    protected MockHttpServletRequestBuilder updateRequest(long postId, Map<String, Object> overrides) {
+        return put("/api/posts/{id}", postId).contentType(MediaType.APPLICATION_JSON).content(postBody(overrides));
+    }
+
+    private String postBody(Map<String, Object> overrides) {
         Map<String, Object> body = new HashMap<>();
         body.put("title", "화장실 세면대 물이 안 나와요");
         body.put("content", "2번째 세면대 수도꼭지를 돌려도 물이 나오지 않습니다.");
@@ -85,8 +95,7 @@ abstract class PostApiTestSupport {
         body.put("posX", 0.4215);
         body.put("posY", 0.653);
         body.putAll(overrides);
-        return post("/api/posts").with(user(CustomUserDetails.from(author)))
-                .contentType(MediaType.APPLICATION_JSON).content(jsonMapper.writeValueAsString(body));
+        return jsonMapper.writeValueAsString(body);
     }
 
     protected static long responseId(MvcResult result) throws Exception {
