@@ -2,9 +2,9 @@ package com.example.showyourvoice.domain.post.controller;
 
 import com.example.showyourvoice.domain.post.controller.dto.AddPostCoAssigneeRequest;
 import com.example.showyourvoice.domain.post.controller.dto.ChangePostStatusRequest;
-import com.example.showyourvoice.domain.post.controller.dto.CreatePostRequest;
 import com.example.showyourvoice.domain.post.controller.dto.PostDetailResponse;
 import com.example.showyourvoice.domain.post.controller.dto.PostSummaryResponse;
+import com.example.showyourvoice.domain.post.controller.dto.SavePostRequest;
 import com.example.showyourvoice.domain.post.domain.PostStatus;
 import com.example.showyourvoice.domain.post.service.PostService;
 import com.example.showyourvoice.global.security.CustomUserDetails;
@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -32,10 +33,17 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping
-    public ResponseEntity<PostDetailResponse> createPost(@Valid @RequestBody CreatePostRequest request,
+    public ResponseEntity<PostDetailResponse> createPost(@Valid @RequestBody SavePostRequest request,
                                                         @AuthenticationPrincipal CustomUserDetails userDetails) {
         PostDetailResponse response = postService.createPost(request, userDetails.getUserId());
         return ResponseEntity.created(URI.create("/api/posts/" + response.id())).body(response);
+    }
+
+    @PutMapping("/{postId}")
+    public ResponseEntity<PostDetailResponse> updatePost(@PathVariable Long postId,
+                                                        @Valid @RequestBody SavePostRequest request,
+                                                        @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(postService.updatePost(postId, request, userDetails.getUserId(), userDetails.getRole()));
     }
 
     @GetMapping
