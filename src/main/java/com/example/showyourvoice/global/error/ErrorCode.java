@@ -34,6 +34,8 @@ public enum ErrorCode {
 
     PLACE_NOT_FOUND(HttpStatus.NOT_FOUND, "L001", "장소를 찾을 수 없습니다."),
     INVALID_TEACHER_ASSIGNMENT(HttpStatus.CONFLICT, "L002", "실의 담당자는 선생님 계정이어야 합니다."),
+    DUPLICATE_ASSIGNMENT_RULE(HttpStatus.CONFLICT, "L003", "이 장소와 카테고리에 이미 담당 규칙이 있습니다."),
+    ASSIGNMENT_RULE_NOT_FOUND(HttpStatus.NOT_FOUND, "L004", "담당 규칙을 찾을 수 없습니다."),
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "R001", "실을 찾을 수 없습니다."),
 
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "게시물을 찾을 수 없습니다."),

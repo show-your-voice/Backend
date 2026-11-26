@@ -46,7 +46,23 @@ public class AssignmentRule extends BaseTimeEntity {
     @Column(nullable = false, length = 20)
     private PostCategory category;
 
+    public static AssignmentRule create(Room room, PostCategory category, User teacher) {
+        AssignmentRule rule = new AssignmentRule();
+        rule.room = room;
+        rule.category = category;
+        rule.changeTeacher(teacher);
+        return rule;
+    }
+
+    public void changeTeacher(User teacher) {
+        this.teacher = requireTeacher(teacher);
+    }
+
     public User assignedTeacher() {
+        return requireTeacher(teacher);
+    }
+
+    private static User requireTeacher(User teacher) {
         if (teacher.getRole() != Role.TEACHER) {
             throw new InvalidTeacherAssignmentException();
         }
