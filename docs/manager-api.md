@@ -31,20 +31,17 @@
 - 담당 장소가 없는 선생님도 `locations: []`로 포함한다. 담당자 계정이 없으면 `[]`를 반환한다.
 - 필터와 페이지네이션 없이 전체 목록을 조회한다. 담당자 수와 무관하게 계정과 담당 규칙을 두 번의 조회로 불러온다.
 
-## 프론트 연결
+## 담당 규칙 관리
 
-```js
-const response = await fetch('http://localhost:8080/api/managers', {
-  credentials: 'include',
-})
-if (!response.ok) throw new Error('담당자 정보를 불러오지 못했습니다.')
-const managers = await response.json()
-```
+선생님 계정으로 로그인한 뒤 실과 카테고리 조합마다 담당 선생님 한 명을 지정한다. 실과 선생님 선택 목록은 각각 `GET /api/rooms`, `GET /api/managers`에서 조회한다.
 
-조회 결과를 `ManagerInfoPage`의 `managers` prop에 전달하면 된다. 현재 FE의 `/managers` 경로는 미리보기 데이터를 사용하며 이번 서버 구현에는 FE API 연동을 포함하지 않는다.
+| 동작 | 메서드와 경로 | 요청 본문 예시 | 성공 응답 |
+| --- | --- | --- | --- |
+| 목록 조회 | `GET /api/assignment-rules` | — | 200, 규칙 배열 |
+| 등록 | `POST /api/assignment-rules` | `{"roomId":12,"category":"FACILITY","teacherId":20}` | 201, 등록된 규칙 |
+| 담당자 변경 | `PUT /api/assignment-rules/{roomId}/{category}` | `{"teacherId":21}` | 200, 수정된 규칙 |
+| 삭제 | `DELETE /api/assignment-rules/{roomId}/{category}` | — | 204 |
 
-## 데이터 등록 기준
+규칙 응답은 `roomId`, `roomName`, `placeName`, `category`, `teacherId`, `teacherName`을 포함한다. 카테고리는 `FACILITY`, `NETWORK`, `ENVIRONMENT`, `ETC`를 사용한다.
 
-장소·카테고리별 담당 규칙은 [기존 게시물 API 문서](post-api.md#담당-규칙-db-등록)의 DB 등록 방법을 따른다. 화면 예시의 이름·이메일·방 이름을 서버에 고정하지 않는다. 현재 장소 모델은 층별 이미지도 관리하므로 실제 DB에 등록한 장소 이름을 그대로 표시한다. 세부 방을 구분하려면 해당 이름으로 등록된 장소와 담당 규칙이 필요하다.
-
-기존 엔티티와 스키마를 사용하며, 담당자·장소·담당 규칙의 생성·수정 API는 이번 조회 API에 포함하지 않는다.
+로그인하지 않으면 401, 학생 계정으로 요청하면 403을 반환한다. 중복 등록은 `409 L003`, 학생을 담당자로 지정하면 `409 L002`, 없는 규칙의 수정·삭제는 `404 L004`다. 과거에 중복 등록된 조합은 최초 규칙을 표시하며, 해당 조합을 삭제하면 기존 중복 규칙도 함께 제거한다.

@@ -2,7 +2,6 @@ package com.example.showyourvoice.domain.user.service;
 
 import com.example.showyourvoice.domain.place.domain.AssignmentRule;
 import com.example.showyourvoice.domain.place.domain.AssignmentRuleRepository;
-import com.example.showyourvoice.domain.post.domain.PostCategory;
 import com.example.showyourvoice.domain.user.controller.dto.ManagerInfoResponse;
 import com.example.showyourvoice.domain.user.controller.dto.UserInfoResponse;
 import com.example.showyourvoice.domain.user.controller.dto.UserNameResponse;
@@ -11,7 +10,6 @@ import com.example.showyourvoice.domain.user.domain.User;
 import com.example.showyourvoice.domain.user.domain.UserRepository;
 import com.example.showyourvoice.domain.user.exception.UserNotFoundException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -56,15 +54,9 @@ public class UserService {
     }
 
     private Map<Long, Set<String>> getLocationsByTeacher() {
-        Set<RoomCategory> processedRoomCategories = new HashSet<>();
         Map<Long, Set<String>> locationsByTeacher = new HashMap<>();
 
-        for (AssignmentRule rule : assignmentRuleRepository.findAllByOrderByRoomPlaceNameAscRoomPlaceIdAscIdAsc()) {
-            RoomCategory roomCategory = new RoomCategory(rule.getRoom().getId(), rule.getCategory());
-            if (!processedRoomCategories.add(roomCategory)) {
-                continue;
-            }
-
+        for (AssignmentRule rule : assignmentRuleRepository.findEffectiveRules()) {
             User teacher = rule.getTeacher();
             if (teacher.getRole() != Role.TEACHER) {
                 continue;
@@ -74,8 +66,5 @@ public class UserService {
                     .add(rule.getRoom().getPlace().getName());
         }
         return locationsByTeacher;
-    }
-
-    private record RoomCategory(Long roomId, PostCategory category) {
     }
 }

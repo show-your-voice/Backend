@@ -157,24 +157,9 @@
 
 작성자 본인 또는 선생님(`TEACHER`)만 삭제할 수 있다. 성공 시 `204 No Content`를 반환하고 첨부 사진 정보와 공동 담당자 관계도 함께 삭제한다. 선생님 계정은 삭제하지 않는다. 다른 사용자가 요청하면 `403 P002`를 반환한다.
 
-## 담당 규칙 DB 등록
+## 담당 규칙과 자동 배정
 
-`tbl_assignment_rule`에 `장소 + 카테고리` 조합별로 `TEACHER` 계정을 연결한다. 게시물이 등록되면 게시물의 장소와 카테고리가 같은 규칙의 선생님을 담당자로 지정한다. 같은 조합의 규칙이 여러 개면 먼저 등록된(id가 가장 작은) 규칙을 쓴다. 규칙이 없으면 `assignee: null`로 생성한다. 규칙의 선생님 계정이 `TEACHER`가 아니면 `409 L002`로 거부한다. 게시물 생성 당시의 담당자를 저장하므로 이후 규칙이 바뀌어도 기존 게시물 담당자는 유지된다.
-
-```sql
-INSERT INTO tbl_place (name, image_url, created_at, updated_at)
-VALUES ('창의관 4층', 'https://example.com/places/creative-4f.png', CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6));
-SET @place_id = LAST_INSERT_ID();
-
-SELECT id, login_id, email, name FROM tbl_user WHERE role = 'TEACHER';
-SET @teacher_id = 20;
-
-INSERT INTO tbl_assignment_rule (place_id, teacher_id, category, created_at, updated_at)
-SELECT @place_id, id, 'FACILITY', CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6)
-FROM tbl_user WHERE id = @teacher_id AND role = 'TEACHER';
-```
-
-`@teacher_id`에는 실제 DB의 선생님 ID를 넣는다. 장소와 담당 규칙의 관리 API는 이번 구현 범위에 포함하지 않는다.
+게시물 등록 시 실(`roomId`)과 카테고리에 해당하는 규칙의 선생님을 담당자로 저장한다. 규칙이 없으면 `assignee`는 `null`이다. 담당 규칙을 변경하거나 삭제해도 이미 등록된 게시물의 담당자는 그대로 유지된다. [담당 규칙 관리 API](manager-api.md#담당-규칙-관리)
 
 ## 담당 선생님 메일 알림
 
