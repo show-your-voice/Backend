@@ -20,15 +20,18 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             join fetch p.room r
             join fetch r.place
             where (:placeId is null or r.place.id = :placeId)
+              and (:roomId is null or r.id = :roomId)
               and (:status is null or p.status = :status)
             order by p.createdAt desc, p.id desc
             """,
             countQuery = """
             select count(p) from Post p
             where (:placeId is null or p.room.place.id = :placeId)
+              and (:roomId is null or p.room.id = :roomId)
               and (:status is null or p.status = :status)
             """)
-    Page<Post> findAllByFilter(@Param("placeId") Long placeId, @Param("status") PostStatus status, Pageable pageable);
+    Page<Post> findAllByFilter(@Param("placeId") Long placeId, @Param("roomId") Long roomId,
+                               @Param("status") PostStatus status, Pageable pageable);
 
     @Query("""
             select p from Post p

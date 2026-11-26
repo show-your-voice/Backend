@@ -119,10 +119,10 @@ public class PostService {
                 .toList());
     }
 
-    public PostPageResponse getPosts(Long placeId, PostStatus status, Pageable pageable) {
+    public PostPageResponse getPosts(Long placeId, Long roomId, PostStatus status, Pageable pageable) {
         // 정렬은 최신순으로 고정하고, 요청의 sort 값은 쓰지 않는다.
         Pageable page = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
-        return PostPageResponse.from(postRepository.findAllByFilter(placeId, status, page));
+        return PostPageResponse.from(postRepository.findAllByFilter(placeId, roomId, status, page));
     }
 
     public List<PostSummaryResponse> getAssignedPosts(Long teacherId, PostStatus status) {
