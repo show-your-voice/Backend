@@ -51,9 +51,10 @@ public class PostController {
 
     @GetMapping
     public ResponseEntity<PostPageResponse> getPosts(@RequestParam(required = false) Long placeId,
+                                                     @RequestParam(required = false) Long roomId,
                                                      @RequestParam(required = false) PostStatus status,
                                                      @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(postService.getPosts(placeId, status, pageable));
+        return ResponseEntity.ok(postService.getPosts(placeId, roomId, status, pageable));
     }
 
     @GetMapping("/assigned")

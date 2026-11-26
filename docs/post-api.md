@@ -110,9 +110,9 @@
 
 ## 게시물 목록 조회
 
-`GET /api/posts?placeId=1&status=UNRESOLVED&page=0&size=20`
+`GET /api/posts?placeId=1&roomId=3&status=UNRESOLVED&page=0&size=20`
 
-`placeId`, `status`는 선택이며 함께 쓸 수 있다. 조건에 맞는 게시물을 최신순으로 한 페이지씩 반환한다.
+`placeId`, `roomId`, `status`는 선택이며 함께 쓸 수 있다. `roomId`를 주면 그 실의 게시물만 조회한다. 조건에 맞는 게시물을 최신순으로 한 페이지씩 반환한다.
 
 | 파라미터 | 기본값 | 설명 |
 |---|---|---|

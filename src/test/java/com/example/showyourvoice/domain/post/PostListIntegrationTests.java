@@ -73,6 +73,30 @@ class PostListIntegrationTests extends PostApiTestSupport {
     }
 
     @Test
+    void filtersByRoomWithTotalCount() throws Exception {
+        long inProgress = responseId(mvc.perform(createRequest(Map.of())).andReturn());
+        mvc.perform(createRequest(Map.of()));
+        mvc.perform(createRequest(Map.of("roomId", samePlaceRoom.getId())));
+        jdbc.update("UPDATE tbl_post SET status = 'IN_PROGRESS' WHERE id = ?", inProgress);
+        entityManager.clear();
+
+        mvc.perform(get("/api/posts").param("placeId", place.getId().toString()).param("roomId", room.getId().toString())
+                        .with(user(CustomUserDetails.from(author))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posts.length()").value(2))
+                .andExpect(jsonPath("$.posts[0].roomId").value(room.getId()))
+                .andExpect(jsonPath("$.posts[1].roomId").value(room.getId()))
+                .andExpect(jsonPath("$.totalCount").value(2));
+
+        mvc.perform(get("/api/posts").param("roomId", room.getId().toString()).param("status", "IN_PROGRESS")
+                        .with(user(CustomUserDetails.from(author))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posts.length()").value(1))
+                .andExpect(jsonPath("$.posts[0].id").value(inProgress))
+                .andExpect(jsonPath("$.totalCount").value(1));
+    }
+
+    @Test
     void returnsRequestedPageWithTotalCount() throws Exception {
         List<Long> ids = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
