@@ -65,7 +65,13 @@
 }
 ```
 
-작성자는 로그인한 사용자, 접수일은 서버 저장 시각, 최초 상태는 `UNRESOLVED`로 지정된다. 시간은 기존 코드의 `LocalDateTime` 형식이다. 처리 상태 코드는 `UNRESOLVED`, `IN_PROGRESS`, `RESOLVED`이며 상태 변경 API는 이번 구현 범위에 포함하지 않는다.
+작성자는 로그인한 사용자, 접수일은 서버 저장 시각, 최초 상태는 `UNRESOLVED`로 지정된다. 시간은 기존 코드의 `LocalDateTime` 형식이다.
+
+## 게시물 처리 상태 변경
+
+`PATCH /api/posts/{id}/status`에 `{"status":"IN_PROGRESS"}`처럼 변경할 상태를 보낸다.
+`UNRESOLVED → IN_PROGRESS → RESOLVED` 순서로 한 단계씩 진행하며, 진행 중으로 바꾸면 `inProgressAt`, 해결 완료로 바꾸면 `resolvedAt`을 기록한다.
+단계를 건너뛰거나 이전 상태로 되돌리면 `409 Conflict`(`P008`)를 반환하고 기존 상태와 시각을 유지한다. 같은 상태를 다시 요청하면 기존 시각을 유지한 채 `200 OK`를 반환한다.
 
 ## 게시물 상세 조회
 

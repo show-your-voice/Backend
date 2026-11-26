@@ -1,5 +1,6 @@
 package com.example.showyourvoice.domain.post.domain;
 
+import com.example.showyourvoice.domain.post.exception.InvalidPostStatusTransitionException;
 import com.example.showyourvoice.domain.room.domain.Room;
 import com.example.showyourvoice.domain.user.domain.Role;
 import com.example.showyourvoice.domain.user.domain.User;
@@ -100,18 +101,14 @@ public class Post extends BaseTimeEntity {
             return;
         }
 
-        status = newStatus;
-        switch (newStatus) {
-            case UNRESOLVED -> {
-                inProgressAt = null;
-                resolvedAt = null;
-            }
-            case IN_PROGRESS -> {
-                inProgressAt = changedAt;
-                resolvedAt = null;
-            }
-            case RESOLVED -> resolvedAt = changedAt;
+        if (status == PostStatus.UNRESOLVED && newStatus == PostStatus.IN_PROGRESS) {
+            inProgressAt = changedAt;
+        } else if (status == PostStatus.IN_PROGRESS && newStatus == PostStatus.RESOLVED) {
+            resolvedAt = changedAt;
+        } else {
+            throw new InvalidPostStatusTransitionException();
         }
+        status = newStatus;
     }
 
     public boolean isEditableBy(Long userId) {
