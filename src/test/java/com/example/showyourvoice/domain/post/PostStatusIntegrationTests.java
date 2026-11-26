@@ -20,11 +20,21 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 class PostStatusIntegrationTests extends PostApiTestSupport {
 
     @Test
-    void teacherCanChangeTheirOwnUnassignedPostAndTimestampsPersist() throws Exception {
+    void teacherCanOnlyAdvanceTheirPostOneStepAndTimestampsPersist() throws Exception {
         long postId = responseId(mvc.perform(createRequest(Map.of()).with(user(CustomUserDetails.from(teacher))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.canChangeStatus").value(true))
                 .andReturn());
+
+        mvc.perform(change(postId, "UNRESOLVED", teacher))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.inProgressAt").isEmpty())
+                .andExpect(jsonPath("$.resolvedAt").isEmpty());
+        assertRejectedChange(postId, "RESOLVED");
+        mvc.perform(get("/api/posts/{id}", postId).with(user(CustomUserDetails.from(teacher))))
+                .andExpect(jsonPath("$.status.code").value("UNRESOLVED"))
+                .andExpect(jsonPath("$.inProgressAt").isEmpty())
+                .andExpect(jsonPath("$.resolvedAt").isEmpty());
 
         MvcResult started = mvc.perform(change(postId, "IN_PROGRESS", teacher))
                 .andExpect(status().isOk())
@@ -33,6 +43,15 @@ class PostStatusIntegrationTests extends PostApiTestSupport {
                 .andReturn();
         String startedAt = jsonMapper.readTree(started.getResponse().getContentAsString()).path("inProgressAt").asString();
         assertThat(startedAt).isNotBlank();
+
+        mvc.perform(change(postId, "IN_PROGRESS", teacher))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.inProgressAt").value(startedAt));
+        assertRejectedChange(postId, "UNRESOLVED");
+        mvc.perform(get("/api/posts/{id}", postId).with(user(CustomUserDetails.from(teacher))))
+                .andExpect(jsonPath("$.status.code").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.inProgressAt").value(startedAt))
+                .andExpect(jsonPath("$.resolvedAt").isEmpty());
 
         MvcResult completed = mvc.perform(change(postId, "RESOLVED", teacher))
                 .andExpect(status().isOk())
@@ -45,21 +64,14 @@ class PostStatusIntegrationTests extends PostApiTestSupport {
         mvc.perform(change(postId, "RESOLVED", teacher))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.resolvedAt").value(resolvedAt));
 
-        entityManager.flush();
-        entityManager.clear();
+        assertRejectedChange(postId, "IN_PROGRESS");
+        assertRejectedChange(postId, "UNRESOLVED");
         mvc.perform(get("/api/posts/{id}", postId).with(user(CustomUserDetails.from(teacher))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.canChangeStatus").value(true))
                 .andExpect(jsonPath("$.status.code").value("RESOLVED"))
                 .andExpect(jsonPath("$.inProgressAt").value(startedAt))
                 .andExpect(jsonPath("$.resolvedAt").value(resolvedAt));
-
-        mvc.perform(change(postId, "UNRESOLVED", teacher))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status.code").value("UNRESOLVED"))
-                .andExpect(jsonPath("$.receivedAt").isNotEmpty())
-                .andExpect(jsonPath("$.inProgressAt").isEmpty())
-                .andExpect(jsonPath("$.resolvedAt").isEmpty());
     }
 
     @Test
@@ -75,10 +87,9 @@ class PostStatusIntegrationTests extends PostApiTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.canChangeStatus").value(true));
 
-        mvc.perform(change(primary, "RESOLVED", teacher))
+        mvc.perform(change(primary, "IN_PROGRESS", teacher))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.inProgressAt").isEmpty())
-                .andExpect(jsonPath("$.resolvedAt").isNotEmpty());
+                .andExpect(jsonPath("$.inProgressAt").isNotEmpty());
         mvc.perform(change(coAssigned, "IN_PROGRESS", teacher))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.inProgressAt").isNotEmpty());
@@ -102,6 +113,14 @@ class PostStatusIntegrationTests extends PostApiTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.canChangeStatus").value(false))
                 .andExpect(jsonPath("$.status.code").value("UNRESOLVED"));
+    }
+
+    private void assertRejectedChange(long postId, String statusCode) throws Exception {
+        mvc.perform(change(postId, statusCode, teacher))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("P008"));
+        entityManager.flush();
+        entityManager.clear();
     }
 
     private long createPost(Map<String, Object> body) throws Exception {

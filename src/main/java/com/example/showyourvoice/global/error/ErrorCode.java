@@ -43,6 +43,7 @@ public enum ErrorCode {
     DUPLICATE_POST_CO_ASSIGNEE(HttpStatus.CONFLICT, "P005", "이미 이 신고의 담당자로 지정된 선생님입니다."),
     POST_STATUS_CHANGE_DENIED(HttpStatus.FORBIDDEN, "P006", "게시물의 처리 상태를 변경할 권한이 없습니다."),
     POST_EDIT_DENIED(HttpStatus.FORBIDDEN, "P007", "작성자만 게시물을 수정할 수 있습니다."),
+    INVALID_POST_STATUS_TRANSITION(HttpStatus.CONFLICT, "P008", "게시물 상태는 미해결 → 진행 중 → 해결 완료 순서로만 변경할 수 있습니다."),
 
     // Image
     INVALID_IMAGE(HttpStatus.BAD_REQUEST, "I001", "jpg, png, webp 형식의 이미지만 올릴 수 있습니다."),
